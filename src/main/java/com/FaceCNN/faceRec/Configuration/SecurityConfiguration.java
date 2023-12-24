@@ -12,9 +12,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/h2-console/**").permitAll()
-                )
-                .headers(headers -> headers.frameOptions().disable())
+                        .requestMatchers("/h2-console/**").permitAll())
+                .headers(headers -> headers.frameOptions((frameOptions) -> frameOptions.disable()))
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers("/h2-console/**"));
         return http.build();
