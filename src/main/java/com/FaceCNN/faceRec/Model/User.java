@@ -28,10 +28,10 @@ public class User {
     private UUID id;
 
     @Column(nullable = false)
-    private String nome;
+    private String name;
 
     @Column(nullable = false)
-    private String senha;
+    private String password;
 
     @Column(nullable = false, unique = true)
     @Email
