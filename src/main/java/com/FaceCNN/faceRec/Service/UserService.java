@@ -18,7 +18,7 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public User create(User user) {
-        if (isEmailValid(user.getEmail())) {
+        if (!isEmailValid(user.getEmail())) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             return userRepository.save(user);
         }

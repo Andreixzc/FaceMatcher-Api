@@ -16,8 +16,8 @@ public class SecurityConfiguration {
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests((request) -> request
                                                 .requestMatchers(HttpMethod.POST, "/user/**").permitAll()
-                                                .requestMatchers("/h2-console/**").permitAll() // Allow access to
-                                                                                               // h2-console
+                                                .requestMatchers("/h2-console/**").permitAll() 
+                                                .requestMatchers("/s3/**").permitAll()                                         
                                                 .anyRequest().authenticated())
                                 .headers(headers -> headers.frameOptions((frameOptions) -> frameOptions.disable())) // Disable
                                                                                                                     // X-Frame-Options
