@@ -30,7 +30,7 @@ public class S3Controller {
 
     @PostMapping("/upload/multiple")
     public ResponseEntity<String> uploadMultipleFiles(
-            @RequestParam(value = "files") List<MultipartFile> files,
+            @RequestParam(value = "file") List<MultipartFile> files,
             @RequestParam(value = "id") UUID id,
             @RequestParam(value = "folderName") String folderName) {
         s3Service.uploadMultiFiles(files, id, folderName);

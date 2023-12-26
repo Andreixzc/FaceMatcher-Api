@@ -43,6 +43,7 @@ public class S3Service {
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + id));
 
             Folder folder = new Folder();
+            File file = convertMultiPartFileToFile(multipartFile);
             folder.setFolderPath(buildFolderPath(user.getName(), folderName));
             folder.setUser(user);
             user.getFolders().add(folder);
@@ -50,7 +51,8 @@ public class S3Service {
             userRepository.save(user);
 
             String key = folder.getFolderPath() + "/" + multipartFile.getOriginalFilename();
-            s3Client.putObject(new PutObjectRequest(bucketName, key, convertMultiPartFileToFile(multipartFile)));
+            s3Client.putObject(new PutObjectRequest(bucketName, key, file));
+            file.delete();
 
             return "File uploaded successfully: " + key;
         } catch (Exception e) {
@@ -62,19 +64,21 @@ public class S3Service {
         try {
             User user = userRepository.findById(id)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + id));
-    
+
             Folder folder = new Folder();
             folder.setFolderPath(buildFolderPath(user.getName(), folderName));
             folder.setUser(user);
             user.getFolders().add(folder);
-    
+
             userRepository.save(user);
-    
+
             for (MultipartFile file : files) {
                 String key = folder.getFolderPath() + "/" + file.getOriginalFilename();
-                s3Client.putObject(new PutObjectRequest(bucketName, key, convertMultiPartFileToFile(file)));
+                File file2 = convertMultiPartFileToFile(file);
+                s3Client.putObject(new PutObjectRequest(bucketName, key, file2));
+                file2.delete();
             }
-    
+
             return "Files uploaded successfully";
         } catch (Exception e) {
             return "Failed to upload files. Error: " + e.getMessage();
