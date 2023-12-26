@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #file-drop-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #upload-form {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="file-drop-area" onclick="openFileInput()">
+    <h3>Clique aqui para selecionar os arquivos ou arraste e solte.</h3>
+    <input type="file" id="file-input" multiple>
+</div>
+
+<form id="upload-form" onsubmit="uploadFiles(); return false;">
+    <label for="id">ID:</label>
+    <input type="text" id="id" name="id" required>
+    <br>
+    <label for="folderName">Nome da Pasta:</label>
+    <input type="text" id="folderName" name="folderName" required>
+    <br>
+    <button type="submit">Enviar</button>
+</form>
+
+<script>
+    const fileInput = document.getElementById('file-input');
+    const idInput = document.getElementById('id');
+    const folderNameInput = document.getElementById('folderName');
+
+    function openFileInput() {
+        fileInput.click();
+    }
+
+    function uploadFiles() {
+        const files = fileInput.files;
+        const id = idInput.value;
+        const folderName = folderNameInput.value;
+
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('folderName', folderName);
+
+        for (const file of files) {
+            formData.append('file', file);
+        }
+
+        fetch('http://localhost:9090/s3/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data);
+            alert('Upload concluído com sucesso!');
+        })
+        .catch(error => {
+            console.error('Erro durante o upload:', error);
+            alert('Erro durante o upload. Verifique o console para mais detalhes.');
+        });
+    }
+</script>
+
+</body>
+</html>

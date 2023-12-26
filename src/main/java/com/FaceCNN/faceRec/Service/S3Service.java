@@ -18,6 +18,7 @@ import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ public class S3Service {
     @Autowired
     private AmazonS3 s3Client;
 
-    public String uploadFile(MultipartFile multipartFile, UUID id, String folderName) {
+    public String uploadSingleFile(MultipartFile multipartFile, UUID id, String folderName) {
         try {
             User user = userRepository.findById(id)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + id));
@@ -54,6 +55,29 @@ public class S3Service {
             return "File uploaded successfully: " + key;
         } catch (Exception e) {
             return "Failed to upload file. Error: " + e.getMessage();
+        }
+    }
+
+    public String uploadMultiFiles(List<MultipartFile> files, UUID id, String folderName) {
+        try {
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + id));
+    
+            Folder folder = new Folder();
+            folder.setFolderPath(buildFolderPath(user.getName(), folderName));
+            folder.setUser(user);
+            user.getFolders().add(folder);
+    
+            userRepository.save(user);
+    
+            for (MultipartFile file : files) {
+                String key = folder.getFolderPath() + "/" + file.getOriginalFilename();
+                s3Client.putObject(new PutObjectRequest(bucketName, key, convertMultiPartFileToFile(file)));
+            }
+    
+            return "Files uploaded successfully";
+        } catch (Exception e) {
+            return "Failed to upload files. Error: " + e.getMessage();
         }
     }
 
