@@ -3,7 +3,7 @@ package com.FaceCNN.faceRec.Service;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Optional;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +14,11 @@ import org.springframework.beans.factory.annotation.Value;
 
 import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.User;
-import com.FaceCNN.faceRec.Repository.FolderRepository;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import java.nio.file.Path;
+import java.util.NoSuchElementException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,9 +30,6 @@ public class S3Service {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private FolderRepository folderRepository;
-
     @Value("${application.bucket.name}")
     private String bucketName;
 
@@ -39,16 +37,29 @@ public class S3Service {
     private AmazonS3 s3Client;
 
     public String uploadFile(MultipartFile multipartFile, UUID id, String folderName) {
-        File file = convertMultiPartFileToFile(multipartFile);
-        Optional<User> user = userRepository.findById(id);
-        Folder folder = new Folder();
-        folder.setFolderPath(user.get().getName() + "/" + folderName);
-        folder.setUser(user.get());
-        user.get().getFolders().add(folder);
-        userRepository.save(user.get());
-        String key = folder.getFolderPath() + "/" + file.getName();
-        s3Client.putObject(new PutObjectRequest(bucketName, key, file));
-        return "File uploaded : " + file.getAbsolutePath();
+        try {
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + id));
+
+            Folder folder = new Folder();
+            folder.setFolderPath(buildFolderPath(user.getName(), folderName));
+            folder.setUser(user);
+            user.getFolders().add(folder);
+
+            userRepository.save(user);
+
+            String key = folder.getFolderPath() + "/" + multipartFile.getOriginalFilename();
+            s3Client.putObject(new PutObjectRequest(bucketName, key, convertMultiPartFileToFile(multipartFile)));
+
+            return "File uploaded successfully: " + key;
+        } catch (Exception e) {
+            return "Failed to upload file. Error: " + e.getMessage();
+        }
+    }
+
+    private String buildFolderPath(String userName, String folderName) {
+        Path path = Paths.get(userName, folderName);
+        return path.toString().replace(File.separator, "/");
     }
 
     private File convertMultiPartFileToFile(MultipartFile file) {
