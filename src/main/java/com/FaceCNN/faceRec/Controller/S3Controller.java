@@ -23,9 +23,7 @@ public class S3Controller {
             @RequestParam(value = "file") MultipartFile file,
             @RequestParam(value = "id") UUID id,
             @RequestParam(value = "folderName") String folderName) {
-
-        // Your code logic here
-
+        s3Service.uploadFile(file, id, folderName);
         return ResponseEntity.ok("File uploaded successfully");
     }
 }

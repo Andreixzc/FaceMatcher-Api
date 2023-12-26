@@ -1,9 +1,10 @@
 package com.FaceCNN.faceRec.Model;
 
 import java.util.UUID;
-
+import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +39,8 @@ public class User {
     private String email;
 
 
-    @OneToMany(mappedBy = "user")
-    private List<Folder> folders;
+    // @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    // private List<Folder> folders;
+    private List<Folder> folders = new ArrayList<>();
 }
