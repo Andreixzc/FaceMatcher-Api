@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.FaceCNN.faceRec.Model.Folder;
+import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.services.s3.AmazonS3;
@@ -36,28 +37,48 @@ public class S3Service {
 
     @Autowired
     private AmazonS3 s3Client;
-
     public String uploadSingleFile(MultipartFile multipartFile, UUID id, String folderName) {
         try {
             User user = userRepository.findById(id)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + id));
-
+    
             Folder folder = new Folder();
-            File file = convertMultiPartFileToFile(multipartFile);
+            FolderContent folderContent = new FolderContent();
+            String originalFilename = multipartFile.getOriginalFilename();
+            folder.setFolderContent(folderContent);
             folder.setFolderPath(buildFolderPath(user.getName(), folderName));
+            folderContent.setOriginalFileName(folder.getFolderPath() + "/" + originalFilename);
+            folderContent.setPklFilename(getPklFilename(folder.getFolderPath() + "pkl/" + originalFilename));
             folder.setUser(user);
             user.getFolders().add(folder);
+            folderContent.setFolder(folder);
 
             userRepository.save(user);
-
+    
             String key = folder.getFolderPath() + "/" + multipartFile.getOriginalFilename();
+            File file = convertMultiPartFileToFile(multipartFile);
             s3Client.putObject(new PutObjectRequest(bucketName, key, file));
             file.delete();
-
+    
             return "File uploaded successfully: " + key;
         } catch (Exception e) {
             return "Failed to upload file. Error: " + e.getMessage();
         }
+    }
+    
+    
+
+    public String getPklFilename(String str) {
+        String sufix = ".pkl";
+        int posToInsert = str.lastIndexOf('.');
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < posToInsert; i++) {
+            sb.append(str.charAt(i));
+        }
+        sb.append(sufix);
+        return sb.toString();
+
     }
 
     public String uploadMultiFiles(List<MultipartFile> files, UUID id, String folderName) {

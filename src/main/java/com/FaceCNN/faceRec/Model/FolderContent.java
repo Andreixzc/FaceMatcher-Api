@@ -28,7 +28,7 @@ public class FolderContent {
 
     @Column(unique = true)
     private String pklFilename;
-
+    
     @OneToOne
     @JoinColumn(name = "folder_id")
     private Folder folder;  
