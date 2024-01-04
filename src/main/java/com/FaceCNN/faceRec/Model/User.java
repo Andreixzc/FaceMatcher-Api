@@ -38,9 +38,6 @@ public class User {
     @Email
     private String email;
 
-
-    // @OneToMany(mappedBy = "user")
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    // private List<Folder> folders;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Folder> folders = new ArrayList<>();
 }

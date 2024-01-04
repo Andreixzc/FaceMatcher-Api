@@ -19,21 +19,12 @@ public class S3Controller {
     @Autowired
     private S3Service s3Service;
 
-    @PostMapping("/upload/single")
-    public ResponseEntity<String> uploadFile(
-            @RequestParam(value = "file") MultipartFile file,
-            @RequestParam(value = "id") UUID id,
-            @RequestParam(value = "folderName") String folderName) {
-        s3Service.uploadSingleFile(file, id, folderName);
-        return ResponseEntity.ok("File uploaded successfully");
-    }
-
-    @PostMapping("/upload/multiple")
-    public ResponseEntity<String> uploadMultipleFiles(
+    @PostMapping("/upload")
+    public ResponseEntity<String> upload(
             @RequestParam(value = "file") List<MultipartFile> files,
             @RequestParam(value = "id") UUID id,
             @RequestParam(value = "folderName") String folderName) {
-        s3Service.uploadMultiFiles(files, id, folderName);
+        s3Service.uploadFiles(files, id, folderName);
         return ResponseEntity.ok("Files uploaded successfully");
     }
 }
