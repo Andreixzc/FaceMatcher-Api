@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+
 import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
@@ -89,6 +92,29 @@ public class S3Service {
         return path.toString().replace(File.separator, "/");
     }
 
+
+    public String checkMatch(MultipartFile multipartFile,String pklfolderToSearch) {
+       
+        String folderName = "tmp";
+        String key = folderName + "/" + multipartFile.getOriginalFilename();
+        File file = convertMultiPartFileToFile(multipartFile);
+        s3Client.putObject(new PutObjectRequest(bucketName, key, file));
+        file.delete();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String requestBody = "{\"key\": \"" + key + "\", \"pklfolder\": \"" + pklfolderToSearch + "\", \"bucket\": \"" + bucketName + "\"}";
+        String lambdaFunctionUrl = "https://5k4o4t4pzfhcx4qkkzcaf7c4oe0gzxwb.lambda-url.sa-east-1.on.aws/";
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
+        //fazer a requisicao pra funcao lambda, passando a key e o pklfolder e o bucketname.
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return "Uploaded and Lambda function invoked successfully";
+        } else {
+            return "Uploaded, but failed to invoke Lambda function. Response: " + response.getBody();
+        }
+    }
     private File convertMultiPartFileToFile(MultipartFile file) {
         File convertedFile = new File(file.getOriginalFilename());
         try (FileOutputStream fos = new FileOutputStream(convertedFile)) {

@@ -27,4 +27,16 @@ public class S3Controller {
         s3Service.uploadFiles(files, id, folderName);
         return ResponseEntity.ok("Files uploaded successfully");
     }
+
+    @PostMapping("/ref")
+    public ResponseEntity<String> uploadRef(@RequestParam(value = "file") MultipartFile file,
+            @RequestParam(value = "folderPath") String pklFolderPath) {
+        try {
+            s3Service.checkMatch(file,pklFolderPath);
+            return ResponseEntity.ok("Files uploaded successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to upload files. Error: " + e.getMessage());
+        }
+    }
 }
