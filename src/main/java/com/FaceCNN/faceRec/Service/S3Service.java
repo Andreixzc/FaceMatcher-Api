@@ -29,15 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
-import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
-
 @Service
 @Slf4j
 @RequestMapping("/s3")
@@ -118,9 +110,9 @@ public class S3Service {
         RestTemplate restTemplate = new RestTemplate();
 
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
-        List<String> resultList = extractStringsFromJson(response.getBody());
-
-        System.out.println(resultList);
+        List<String> resultList = parseMatchesJson(response.getBody());
+        List<String> matchesKey = buildMatchesPath(resultList, pklfolderToSearch);
+        System.out.println(matchesKey);
         if (response.getStatusCode() == HttpStatus.OK) {
 
             return "Uploaded and Lambda function invoked successfully";
@@ -130,7 +122,7 @@ public class S3Service {
         }
     }
 
-    public static List<String> extractStringsFromJson(String jsonResponse) {
+    public static List<String> parseMatchesJson(String jsonResponse) {
         List<String> resultList = new ArrayList<>();
 
         try {
@@ -172,4 +164,25 @@ public class S3Service {
         return sb.toString();
 
     }
+
+    public List<String> buildMatchesPath(List<String> matches,String bucketPath){
+        String sufix = "pkl";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bucketPath.lastIndexOf(sufix); i++) {
+            sb.append(bucketPath.charAt(i));
+        }
+        String prefix = sb.toString();
+        prefix = prefix + "/";
+        
+        
+        for (int i = 0; i < matches.size(); i++) {
+            String originalStr = matches.get(i);
+            String concatenatedString = prefix + originalStr;
+            matches.set(i, concatenatedString);
+        }
+        
+        return matches;
+        
+    }
+
 }
