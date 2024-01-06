@@ -112,7 +112,8 @@ public class S3Service {
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
         List<String> resultList = parseMatchesJson(response.getBody());
         List<String> matchesKey = buildMatchesPath(resultList, pklfolderToSearch);
-        System.out.println(matchesKey);
+        //Usar matches key para recuperar o filename original dos arquivos que deram match.
+        //instanciar um folder repository? e dar um findby pklfilename? dunno
         if (response.getStatusCode() == HttpStatus.OK) {
 
             return "Uploaded and Lambda function invoked successfully";
