@@ -116,16 +116,12 @@ public class S3Service {
 
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
         List<String> resultList = parseMatchesJson(response.getBody());
-        System.out.println("Result list:" + resultList);
         List<String> matchesKey = buildMatchesPath(resultList, pklfolderToSearch);
+        System.out.println("Printint mathces key:");
         System.out.println(matchesKey);
-        //consertar caminho!!
-        // de:  28006245-5183-4cee-99c6-1bb3d5251f59/pastaDiversosfiles/Screenshot_1.pkl
-        // para: 28006245-5183-4cee-99c6-1bb3d5251f59/pastaDiversosfilespkl/Screenshot_1.pkl
         List<String> originalMatchPath = getOriginalFileNames(matchesKey);
+        System.out.println(originalMatchPath);
 
-        //Usar matches key para recuperar o filename original dos arquivos que deram match.
-        //instanciar um folder repository? e dar um findby pklfilename? dunno
         if (response.getStatusCode() == HttpStatus.OK) {
 
             return "Uploaded and Lambda function invoked successfully";
@@ -186,7 +182,7 @@ public class S3Service {
             sb.append(pklFolderPath.charAt(i));
         }
         String prefix = sb.toString();
-        prefix = prefix + "/";
+        prefix = prefix + "pkl/";
         
         
         for (int i = 0; i < matches.size(); i++) {
