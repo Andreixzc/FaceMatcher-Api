@@ -100,21 +100,31 @@ public class S3Service {
         File file = convertMultiPartFileToFile(multipartFile);
         s3Client.putObject(new PutObjectRequest(bucketName, key, file));
         file.delete();
+        //upa arquivo na pasta tmp
+
+        //fazer req pra lambda passando o path da foto
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String requestBody = "{\"key\": \"" + key + "\", \"pklfolder\": \"" + pklfolderToSearch + "\", \"bucket\": \"" + bucketName + "\"}";
-        String lambdaFunctionUrl = "https://5k4o4t4pzfhcx4qkkzcaf7c4oe0gzxwb.lambda-url.sa-east-1.on.aws/";
+        //lembrar de passar a key do pkl
+        String requestBody = "{\"ref_path\": \"" + key + "\", \"pickle_folder_key\": \"" + pklfolderToSearch + "\", \"bucket_name\": \"" + bucketName + "\"}";
+        System.out.println(requestBody);
+        String lambdaFunctionUrl = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
-        //fazer a requisicao pra funcao lambda, passando a key e o pklfolder e o bucketname.
         if (response.getStatusCode() == HttpStatus.OK) {
+            System.out.println(response.getBody());
             return "Uploaded and Lambda function invoked successfully";
         } else {
+            System.out.println(response.getBody());
             return "Uploaded, but failed to invoke Lambda function. Response: " + response.getBody();
         }
     }
+
+
+
     private File convertMultiPartFileToFile(MultipartFile file) {
         File convertedFile = new File(file.getOriginalFilename());
         try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
