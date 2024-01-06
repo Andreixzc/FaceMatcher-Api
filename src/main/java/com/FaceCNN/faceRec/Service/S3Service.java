@@ -21,10 +21,20 @@ import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,24 +56,20 @@ public class S3Service {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + userId));
-    
-            // Check if the folder already exists for the user and folderName
             Optional<Folder> existingFolder = user.getFolders().stream()
                     .filter(folder -> folder.getFolderPath().equals(buildFolderPath(user.getId(), folderName)))
                     .findFirst();
-    
+
             Folder folder;
             if (existingFolder.isPresent()) {
-                // If the folder already exists, use it
                 folder = existingFolder.get();
             } else {
-                // If the folder doesn't exist, create a new one
                 folder = new Folder();
                 folder.setFolderPath(buildFolderPath(user.getId(), folderName));
                 folder.setUser(user);
                 user.getFolders().add(folder);
             }
-    
+
             for (MultipartFile multipartFile : multipartFiles) {
                 FolderContent folderContent = new FolderContent();
                 String originalFilename = multipartFile.getOriginalFilename();
@@ -71,59 +77,78 @@ public class S3Service {
                 folderContent.setPklFilename(getPklFilename(folder.getFolderPath() + "/pkl/" + originalFilename));
                 folderContent.setFolder(folder);
                 folder.getFolderContents().add(folderContent);
-    
+
                 String key = folderContent.getOriginalFileName();
                 File file = convertMultiPartFileToFile(multipartFile);
                 s3Client.putObject(new PutObjectRequest(bucketName, key, file));
                 file.delete();
             }
-    
+
             userRepository.save(user);
-    
+
             return "Files uploaded successfully";
         } catch (Exception e) {
             return "Failed to upload files. Error: " + e.getMessage();
         }
     }
 
-
     private String buildFolderPath(UUID userId, String folderName) {
         Path path = Paths.get(userId.toString(), folderName);
         return path.toString().replace(File.separator, "/");
     }
 
+    public String checkMatch(MultipartFile multipartFile, String pklfolderToSearch) {
 
-    public String checkMatch(MultipartFile multipartFile,String pklfolderToSearch) {
-       
         String folderName = "tmp";
         String key = folderName + "/" + multipartFile.getOriginalFilename();
         File file = convertMultiPartFileToFile(multipartFile);
         s3Client.putObject(new PutObjectRequest(bucketName, key, file));
         file.delete();
-        //upa arquivo na pasta tmp
+        // upa arquivo na pasta tmp
 
-        //fazer req pra lambda passando o path da foto
+        // fazer req pra lambda passando o path da foto
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        //lembrar de passar a key do pkl
-        String requestBody = "{\"ref_path\": \"" + key + "\", \"pickle_folder_key\": \"" + pklfolderToSearch + "\", \"bucket_name\": \"" + bucketName + "\"}";
-        System.out.println(requestBody);
+        // lembrar de passar a key do pkl
+        String requestBody = "{\"ref_path\": \"" + key + "\", \"pickle_folder_key\": \"" + pklfolderToSearch
+                + "\", \"bucket_name\": \"" + bucketName + "\"}";
         String lambdaFunctionUrl = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
-
         RestTemplate restTemplate = new RestTemplate();
+
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
+        List<String> resultList = extractStringsFromJson(response.getBody());
+
+        System.out.println(resultList);
         if (response.getStatusCode() == HttpStatus.OK) {
-            System.out.println(response.getBody());
+
             return "Uploaded and Lambda function invoked successfully";
         } else {
-            System.out.println(response.getBody());
+
             return "Uploaded, but failed to invoke Lambda function. Response: " + response.getBody();
         }
     }
 
+    public static List<String> extractStringsFromJson(String jsonResponse) {
+        List<String> resultList = new ArrayList<>();
 
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(jsonResponse);
+
+            if (jsonNode.has("matching_photos") && jsonNode.get("matching_photos").isArray()) {
+                JsonNode photosNode = jsonNode.get("matching_photos");
+                for (JsonNode photo : photosNode) {
+                    resultList.add(photo.asText());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace(); 
+        }
+
+        return resultList;
+    }
 
     private File convertMultiPartFileToFile(MultipartFile file) {
         File convertedFile = new File(file.getOriginalFilename());
