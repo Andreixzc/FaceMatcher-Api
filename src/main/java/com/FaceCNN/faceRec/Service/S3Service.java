@@ -18,6 +18,8 @@ import org.springframework.web.client.RestTemplate;
 import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
+import com.FaceCNN.faceRec.Repository.FolderContentRepository;
+import com.FaceCNN.faceRec.Repository.FolderRepository;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -37,6 +39,9 @@ public class S3Service {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private FolderContentRepository folderContentRepository;
 
     @Value("${application.bucket.name}")
     private String bucketName;
@@ -66,7 +71,7 @@ public class S3Service {
                 FolderContent folderContent = new FolderContent();
                 String originalFilename = multipartFile.getOriginalFilename();
                 folderContent.setOriginalFileName(folder.getFolderPath() + "/" + originalFilename);
-                folderContent.setPklFilename(getPklFilename(folder.getFolderPath() + "/pkl/" + originalFilename));
+                folderContent.setPklFilename(getPklFilename(folder.getFolderPath() + "pkl/" + originalFilename));
                 folderContent.setFolder(folder);
                 folder.getFolderContents().add(folderContent);
 
@@ -78,7 +83,7 @@ public class S3Service {
 
             userRepository.save(user);
 
-            return "Files uploaded successfully";
+            return "Files uploaded successfully to folder: "+ folder.getFolderPath()+"pkl";
         } catch (Exception e) {
             return "Failed to upload files. Error: " + e.getMessage();
         }
@@ -111,7 +116,14 @@ public class S3Service {
 
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
         List<String> resultList = parseMatchesJson(response.getBody());
+        System.out.println("Result list:" + resultList);
         List<String> matchesKey = buildMatchesPath(resultList, pklfolderToSearch);
+        System.out.println(matchesKey);
+        //consertar caminho!!
+        // de:  28006245-5183-4cee-99c6-1bb3d5251f59/pastaDiversosfiles/Screenshot_1.pkl
+        // para: 28006245-5183-4cee-99c6-1bb3d5251f59/pastaDiversosfilespkl/Screenshot_1.pkl
+        List<String> originalMatchPath = getOriginalFileNames(matchesKey);
+
         //Usar matches key para recuperar o filename original dos arquivos que deram match.
         //instanciar um folder repository? e dar um findby pklfilename? dunno
         if (response.getStatusCode() == HttpStatus.OK) {
@@ -166,11 +178,12 @@ public class S3Service {
 
     }
 
-    public List<String> buildMatchesPath(List<String> matches,String bucketPath){
+    public List<String> buildMatchesPath(List<String> matches,String pklFolderPath){
+        System.out.println(pklFolderPath);
         String sufix = "pkl";
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bucketPath.lastIndexOf(sufix); i++) {
-            sb.append(bucketPath.charAt(i));
+        for (int i = 0; i < pklFolderPath.lastIndexOf(sufix); i++) {
+            sb.append(pklFolderPath.charAt(i));
         }
         String prefix = sb.toString();
         prefix = prefix + "/";
@@ -184,6 +197,14 @@ public class S3Service {
         
         return matches;
         
+    }
+
+    public List<String> getOriginalFileNames(List<String> pklFilenames){
+        List<String> output = new ArrayList<>();
+        for (String item : pklFilenames) {
+            output.add(this.folderContentRepository.findOriginalFileNameByPklFilename(item));
+        }
+       return output;
     }
 
 }

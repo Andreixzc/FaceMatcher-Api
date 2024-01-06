@@ -24,8 +24,8 @@ public class S3Controller {
             @RequestParam(value = "file") List<MultipartFile> files,
             @RequestParam(value = "id") UUID id,
             @RequestParam(value = "folderName") String folderName) {
-        s3Service.uploadFiles(files, id, folderName);
-        return ResponseEntity.ok("Files uploaded successfully");
+        return(ResponseEntity.ok(s3Service.uploadFiles(files, id, folderName)));
+        // return ResponseEntity.ok("Files uploaded successfully");
     }
 
     @PostMapping("/ref")
