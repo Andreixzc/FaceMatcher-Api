@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.FaceCNN.faceRec.Dto.FolderResponseDto;
 import com.FaceCNN.faceRec.Service.S3Service;
 
 @RestController
@@ -20,7 +21,7 @@ public class S3Controller {
     private S3Service s3Service;
 
     @PostMapping("/upload")
-    public ResponseEntity<String> upload(
+    public ResponseEntity<FolderResponseDto> upload(
             @RequestParam(value = "file") List<MultipartFile> files,
             @RequestParam(value = "id") UUID id,
             @RequestParam(value = "folderName") String folderName) {

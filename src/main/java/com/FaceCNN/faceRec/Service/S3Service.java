@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
+import com.FaceCNN.faceRec.Dto.FolderResponseDto;
 import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
@@ -49,7 +50,7 @@ public class S3Service {
     @Autowired
     private AmazonS3 s3Client;
 
-    public String uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
+    public FolderResponseDto uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + userId));
@@ -83,9 +84,9 @@ public class S3Service {
 
             userRepository.save(user);
 
-            return "Files uploaded successfully to folder: "+ folder.getFolderPath()+"pkl";
+            return new FolderResponseDto(folder.getFolderPath()+"pkl","Ok");
         } catch (Exception e) {
-            return "Failed to upload files. Error: " + e.getMessage();
+            return new FolderResponseDto(null,"Erro");
         }
     }
 
@@ -95,29 +96,24 @@ public class S3Service {
     }
 
     public String checkMatch(MultipartFile multipartFile, String pklfolderToSearch) {
-
+        //upload ref picture:
         String folderName = "tmp";
         String key = folderName + "/" + multipartFile.getOriginalFilename();
         File file = convertMultiPartFileToFile(multipartFile);
         s3Client.putObject(new PutObjectRequest(bucketName, key, file));
         file.delete();
-        // upa arquivo na pasta tmp
 
-        // fazer req pra lambda passando o path da foto
+        //Send request to lambda:
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        // lembrar de passar a key do pkl
         String requestBody = "{\"ref_path\": \"" + key + "\", \"pickle_folder_key\": \"" + pklfolderToSearch
                 + "\", \"bucket_name\": \"" + bucketName + "\"}";
         String lambdaFunctionUrl = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-
         RestTemplate restTemplate = new RestTemplate();
-
         ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
         List<String> resultList = parseMatchesJson(response.getBody());
         List<String> matchesKey = buildMatchesPath(resultList, pklfolderToSearch);
-        System.out.println("Printint mathces key:");
         System.out.println(matchesKey);
         List<String> originalMatchPath = getOriginalFileNames(matchesKey);
         System.out.println(originalMatchPath);
