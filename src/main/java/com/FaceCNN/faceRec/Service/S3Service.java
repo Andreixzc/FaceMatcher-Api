@@ -20,7 +20,6 @@ import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Repository.FolderContentRepository;
-import com.FaceCNN.faceRec.Repository.FolderRepository;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -117,6 +116,7 @@ public class S3Service {
         System.out.println(matchesKey);
         List<String> originalMatchPath = getOriginalFileNames(matchesKey);
         System.out.println(originalMatchPath);
+        //retornar a url da imagem do s3 para o front
 
         if (response.getStatusCode() == HttpStatus.OK) {
 
@@ -179,8 +179,6 @@ public class S3Service {
         }
         String prefix = sb.toString();
         prefix = prefix + "pkl/";
-        
-        
         for (int i = 0; i < matches.size(); i++) {
             String originalStr = matches.get(i);
             String concatenatedString = prefix + originalStr;
