@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.FaceCNN.faceRec.Dto.FolderResponseDto;
+import com.FaceCNN.faceRec.Dto.MatchesResponseDto;
 import com.FaceCNN.faceRec.Service.S3Service;
 
 @RestController
@@ -30,14 +31,10 @@ public class S3Controller {
     }
 
     @PostMapping("/ref")
-    public ResponseEntity<String> uploadRef(@RequestParam(value = "file") MultipartFile file,
+    public ResponseEntity<MatchesResponseDto> uploadRef(@RequestParam(value = "file") MultipartFile file,
             @RequestParam(value = "folderPath") String pklFolderPath) {
-        try {
             s3Service.checkMatch(file,pklFolderPath);
-            return ResponseEntity.ok("Files uploaded successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Failed to upload files. Error: " + e.getMessage());
-        }
+            return ResponseEntity.ok( s3Service.checkMatch(file,pklFolderPath));
+        
     }
 }
