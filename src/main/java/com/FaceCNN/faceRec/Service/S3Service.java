@@ -126,12 +126,6 @@ public class S3Service {
         for (String path : originalMatchPath) {
             imgUrlList.add(getImageUrl(bucketName, path, s3Client));
         }
-
-        // System.out.println(imgUrlList);
-
-        // if (imgUrlList.isEmpty()) {
-        //     return new MatchesResponseDto(null);
-        // }
         return new MatchesResponseDto(imgUrlList);
     }
 

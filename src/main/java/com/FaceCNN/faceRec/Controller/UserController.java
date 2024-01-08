@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.FaceCNN.faceRec.Dto.UserLoginDto;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Service.UserService;
 
@@ -28,6 +29,12 @@ public class UserController {
                     .body(createdUser);
         }
         return ResponseEntity.badRequest().body("Email already registered");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody UserLoginDto userDto) {
+
+        return userService.login(userDto);
     }
 
 }
