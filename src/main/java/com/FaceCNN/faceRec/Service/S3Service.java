@@ -28,6 +28,7 @@ import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -35,6 +36,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequestMapping("/s3")
 public class S3Service {
+
+    private static final String PICKLE_FILE_SUFFIX = ".pkl";
+    private static final String LAMBDA_FUNCTION_URL = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
 
     @Autowired
     private UserRepository userRepository;
@@ -102,33 +107,58 @@ public class S3Service {
     }
 
     public MatchesResponseDto checkMatch(MultipartFile multipartFile, String pklfolderToSearch) {
-        // upload ref picture:
+        //-------------Upload da imagem de referência pro bucket---------------
         String folderName = "tmp";
         String key = folderName + "/" + multipartFile.getOriginalFilename();
         File file = convertMultiPartFileToFile(multipartFile);
         s3Client.putObject(new PutObjectRequest(bucketName, key, file));
         file.delete();
+        ///////////////////////////////////////////////////////////////////////////////////////
 
-        // Send request to lambda:
+        //---------Invocando a função lambda que retorna o nome dos arquivos em PKL que houveram matches--------
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String requestBody = "{\"ref_path\": \"" + key + "\", \"pickle_folder_key\": \"" + pklfolderToSearch
-                + "\", \"bucket_name\": \"" + bucketName + "\"}";
-        String lambdaFunctionUrl = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
+        String requestBody = buildLambdaRequestBody(key, pklfolderToSearch, bucketName);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.postForEntity(lambdaFunctionUrl, entity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(LAMBDA_FUNCTION_URL, entity, String.class);
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+        //----------- ----------------Tratando resultado da requisição:--------------------------------
+        // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl, imagem2.pkl,imagem3.pkl...]
         List<String> resultList = parseMatchesJson(response.getBody());
+        /////////////////////////////////////////////////////////////////
+        //Construindo o caminho completo do arquivo Pkl:
+        //[UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
         List<String> matchesKey = buildMatchesPath(resultList, pklfolderToSearch);
+
+        //Extraindo path original do banco de dados das imagens, sem ser do arquivo em PKL.
         List<String> originalMatchPath = getOriginalFileNames(matchesKey);
+        //originalMatchPath = [UUID/Evento1/imagem1.png,UUID/Evento1/imagem2.jpeg,UUID/Evento1/imagem3.png]
         List<String> imgUrlList = new ArrayList<>();
 
         for (String path : originalMatchPath) {
-            imgUrlList.add(getImageUrl(bucketName, path, s3Client));
+            imgUrlList.add(getImageUrlByFilePath(bucketName, path, s3Client));
         }
+        //Itero sobre essa lista, e vou pegando a url da imagem de cada um dos caminhos e retorno pro controller:
         return new MatchesResponseDto(imgUrlList);
     }
 
+    private String buildLambdaRequestBody(String refPath, String pickleFolderKey, String bucketName) {
+        // Cria corpo da requisição em JSON:
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(Map.of(
+                    "ref_path", refPath,
+                    "pickle_folder_key", pickleFolderKey,
+                    "bucket_name", bucketName));
+        } catch (JsonProcessingException e) {
+            log.error("Error building Lambda request body", e);
+            throw new RuntimeException("Error building Lambda request body", e);
+        }
+    }
+
+    //Métodos auxiliares:
     public static List<String> parseMatchesJson(String jsonResponse) {
         List<String> resultList = new ArrayList<>();
 
@@ -199,7 +229,7 @@ public class S3Service {
         return output;
     }
 
-    public static String getImageUrl(String bucketName, String filePath, AmazonS3 s3Client) {
+    public static String getImageUrlByFilePath(String bucketName, String filePath, AmazonS3 s3Client) {
         try {
             Date expiration = new Date();
             long expTimeMillis = expiration.getTime();
