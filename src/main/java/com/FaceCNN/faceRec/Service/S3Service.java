@@ -22,6 +22,7 @@ import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Repository.FolderContentRepository;
+import com.FaceCNN.faceRec.Repository.FolderRepository;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
@@ -54,6 +55,8 @@ public class S3Service {
 
     @Autowired
     private FolderContentRepository folderContentRepository;
+
+
 
     @Value("${application.bucket.name}")
     private String bucketName;
@@ -158,6 +161,8 @@ public class S3Service {
         }
     }
 
+
+
     //Métodos auxiliares:
     public static List<String> parseMatchesJson(String jsonResponse) {
         List<String> resultList = new ArrayList<>();
@@ -252,5 +257,7 @@ public class S3Service {
 
         return null;
     }
+
+   
 
 }
