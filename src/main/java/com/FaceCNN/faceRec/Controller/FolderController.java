@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import com.FaceCNN.faceRec.Dto.Response.FolderResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.FaceCNN.faceRec.Model.Folder;
+import com.FaceCNN.faceRec.Service.S3Service;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -13,11 +15,11 @@ import com.FaceCNN.faceRec.Service.FolderService;
 
 @RestController
 @RequestMapping("/folder")
+@RequiredArgsConstructor
 public class FolderController {
 
-    @Autowired
-    private FolderService folderService;
-
+    private final FolderService folderService;
+    private final S3Service s3Service;
 
     //Não sei se compensa fazer autenticação por um jwt por exemplo, talvez agnt podia deixar gambiarra e validar
     //se o cara ta logado e se o ID bate, passando o USER pelo body dessa req
@@ -32,10 +34,14 @@ public class FolderController {
         }
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteFolder(@PathVariable UUID id) {
         try {
-            folderService.deleteFolder(id);
+            Folder folder = folderService.findFolderById(id);
+
+            s3Service.deleteFolder(folder.getFolderPath());
+            folderService.deleteFolder(folder);
+
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 
         } catch (Exception e) {

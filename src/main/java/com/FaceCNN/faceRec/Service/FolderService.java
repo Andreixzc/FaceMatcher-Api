@@ -24,17 +24,15 @@ public class FolderService {
 
     }
 
-    public void deleteFolder(UUID id) {
-        Folder folder = findFolderById(id);
-
+    public void deleteFolder(Folder folder) {
         if (!folder.userId().equals(getLoggedUser().getId())) {
             throw new RuntimeException("Invalid user to delete this folder");
         }
 
-        folderRepository.deleteById(id);
+        folderRepository.deleteById(folder.getId());
     }
 
-    private Folder findFolderById(UUID id) {
+    public Folder findFolderById(UUID id) {
         return folderRepository.findById(id).orElseThrow(() -> new RuntimeException("Folder not found"));
     }
 }

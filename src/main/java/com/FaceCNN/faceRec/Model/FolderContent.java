@@ -18,7 +18,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class FolderContent {
-   @Id
+    @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 

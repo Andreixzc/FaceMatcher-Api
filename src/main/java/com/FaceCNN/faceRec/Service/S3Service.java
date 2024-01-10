@@ -9,8 +9,7 @@ import com.FaceCNN.faceRec.Repository.FolderContentRepository;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -88,6 +87,26 @@ public class S3Service {
             return new FolderResponseOld(folder.getFolderPath() + "pkl", "Ok");
         } catch (Exception e) {
             return new FolderResponseOld(null, "Erro: " + e.getMessage());
+        }
+    }
+
+    public void deleteFolder(String folderPath) {
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+                .withBucketName(bucketName)
+                .withPrefix(folderPath);
+
+        ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
+
+        // O resultado do listing pode ser truncado, então é necessário iterar sobre os resultados
+        while (true) {
+            for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                s3Client.deleteObject(bucketName, objectSummary.getKey());
+            }
+            if (objectListing.isTruncated()) {
+                objectListing = s3Client.listNextBatchOfObjects(objectListing);
+            } else {
+                break;
+            }
         }
     }
 
@@ -195,7 +214,7 @@ public class S3Service {
         return sb.toString();
     }
 
-    public List<String> buildMatchesPath(List<String> matches, String pklFolderPath) {
+    private List<String> buildMatchesPath(List<String> matches, String pklFolderPath) {
         System.out.println(pklFolderPath);
         String suffix = "pkl";
         StringBuilder sb = new StringBuilder();
@@ -213,7 +232,7 @@ public class S3Service {
         return matches;
     }
 
-    public List<String> getOriginalFileNames(List<String> pklFilenames) {
+    private List<String> getOriginalFileNames(List<String> pklFilenames) {
         return pklFilenames.stream()
                 .map(item -> folderContentRepository.findOriginalFileNameByPklFilename(item))
                 .toList();
@@ -238,5 +257,4 @@ public class S3Service {
 
         return null;
     }
-
 }
