@@ -16,7 +16,6 @@ public class FolderService {
     @Autowired
     private FolderRepository folderRepository;
 
-
     public List<FolderResponse> findFolderByUserId(UUID id){
 
         List<Folder> result = this.folderRepository.findByUserId(id);
