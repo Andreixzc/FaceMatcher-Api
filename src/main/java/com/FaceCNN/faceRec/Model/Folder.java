@@ -43,6 +43,8 @@ public class Folder {
         return user.getId();
     }
 
-       
-
+    public void addFolderContent(FolderContent folderContent) {
+        folderContents.add(folderContent);
+        folderContent.setFolder(this);
+    }
 }

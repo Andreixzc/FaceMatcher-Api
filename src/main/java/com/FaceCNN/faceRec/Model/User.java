@@ -74,4 +74,9 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    public void addFolder(Folder folder) {
+        folders.add(folder);
+        folder.setUser(this);
+    }
 }
