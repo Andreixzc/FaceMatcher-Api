@@ -16,13 +16,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
-import com.FaceCNN.faceRec.Dto.FolderResponseDto;
-import com.FaceCNN.faceRec.Dto.MatchesResponseDto;
+import com.FaceCNN.faceRec.Dto.Response.FolderResponseOld;
+import com.FaceCNN.faceRec.Dto.Response.MatchesResponse;
 import com.FaceCNN.faceRec.Model.Folder;
 import com.FaceCNN.faceRec.Model.FolderContent;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Repository.FolderContentRepository;
-import com.FaceCNN.faceRec.Repository.FolderRepository;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
@@ -64,7 +63,7 @@ public class S3Service {
     @Autowired
     private AmazonS3 s3Client;
 
-    public FolderResponseDto uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
+    public FolderResponseOld uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + userId));
@@ -98,9 +97,9 @@ public class S3Service {
 
             userRepository.save(user);
 
-            return new FolderResponseDto(folder.getFolderPath() + "pkl", "Ok");
+            return new FolderResponseOld(folder.getFolderPath() + "pkl", "Ok");
         } catch (Exception e) {
-            return new FolderResponseDto(null, "Erro");
+            return new FolderResponseOld(null, "Erro");
         }
     }
 
@@ -109,7 +108,7 @@ public class S3Service {
         return path.toString().replace(File.separator, "/");
     }
 
-    public MatchesResponseDto checkMatch(MultipartFile multipartFile, String pklfolderToSearch) {
+    public MatchesResponse checkMatch(MultipartFile multipartFile, String pklfolderToSearch) {
         //-------------Upload da imagem de referência pro bucket---------------
         String folderName = "tmp";
         String key = folderName + "/" + multipartFile.getOriginalFilename();
@@ -144,7 +143,7 @@ public class S3Service {
             imgUrlList.add(getImageUrlByFilePath(bucketName, path, s3Client));
         }
         //Itero sobre essa lista, e vou pegando a url da imagem de cada um dos caminhos e retorno pro controller:
-        return new MatchesResponseDto(imgUrlList);
+        return new MatchesResponse(imgUrlList);
     }
 
     private String buildLambdaRequestBody(String refPath, String pickleFolderKey, String bucketName) {

@@ -3,6 +3,7 @@ package com.FaceCNN.faceRec.Service;
 import java.util.List;
 import java.util.UUID;
 
+import com.FaceCNN.faceRec.Dto.Response.FolderResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +17,10 @@ public class FolderService {
     private FolderRepository folderRepository;
 
 
-    public List<Folder> findFolderByUserId(UUID id){
+    public List<FolderResponse> findFolderByUserId(UUID id){
 
-        return this.folderRepository.findByUserId(id);
+        List<Folder> result = this.folderRepository.findByUserId(id);
+        return result.stream().map(FolderResponse::fromFolder).toList();
+
     }
 }

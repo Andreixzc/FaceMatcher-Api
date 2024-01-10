@@ -32,9 +32,11 @@ public class SecurityConfiguration {
                 .csrf().disable() // Disable CSRF
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers(HttpMethod.POST, "/user/**").permitAll()
-                    .requestMatchers("/h2-console/**").permitAll()
-                    .requestMatchers("/s3/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/user/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/folder/**").permitAll()
+                        .requestMatchers("/s3/**").permitAll()
+
                     .anyRequest().authenticated())
                 .headers(headers -> headers.frameOptions(options -> options.disable())); // Disable X-Frame-Options for h2-console
     

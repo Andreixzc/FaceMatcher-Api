@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.FaceCNN.faceRec.Dto.UserLoginDto;
+import com.FaceCNN.faceRec.Dto.Request.UserLoginRequest;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Service.UserService;
 
@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginDto userDto) {
+    public ResponseEntity<?> login(@RequestBody UserLoginRequest userDto) {
 
         return userService.login(userDto);
     }
