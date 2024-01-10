@@ -2,15 +2,13 @@ package com.FaceCNN.faceRec.Service;
 
 import java.util.Objects;
 
-import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.FaceCNN.faceRec.Dto.UserLoginDto;
+import com.FaceCNN.faceRec.Dto.Request.UserLoginRequest;
 import com.FaceCNN.faceRec.Model.User;
 import com.FaceCNN.faceRec.Repository.UserRepository;
 
@@ -36,7 +34,7 @@ public class UserService {
         return Objects.isNull(userRepository.findByEmail(email));
     }
 
-    public ResponseEntity<String> login(UserLoginDto userLoginDto){
+    public ResponseEntity<String> login(UserLoginRequest userLoginDto){
 
         User user = userRepository.findByEmail(userLoginDto.login()).get(0);
         if (user!= null && user.getPassword().equals(passwordEncoder.encode(userLoginDto.password()))) {

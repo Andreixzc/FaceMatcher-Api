@@ -37,6 +37,12 @@ public class Folder {
     // private FolderContent folderContent;
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FolderContent> folderContents = new ArrayList<>();
+
+
+    public UUID userId() {
+        return user.getId();
+    }
+
        
 
 }
