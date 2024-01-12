@@ -29,6 +29,9 @@ public class Folder {
     @Column(unique = true)
     private String folderPath;
 
+    @Column()
+    private String folderName;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

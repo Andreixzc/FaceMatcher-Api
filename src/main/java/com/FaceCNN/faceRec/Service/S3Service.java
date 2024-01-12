@@ -66,19 +66,27 @@ public class S3Service {
                 folder = existingFolder.get();
             } else {
                 folder.setFolderPath(buildFolderPath(user.getId(), folderName));
+                folder.setFolderName(folderName);
                 user.addFolder(folder);
             }
 
             for (MultipartFile multipartFile : multipartFiles) {
+
                 FolderContent folderContent = new FolderContent();
                 String originalFilename = multipartFile.getOriginalFilename();
-                folderContent.setOriginalFileName(folder.getFolderPath() + "/" + originalFilename);
-                folderContent.setPklFilename(getPklFilename(folder.getFolderPath() + "pkl/" + originalFilename));
-                folder.addFolderContent(folderContent);
+                folderContent.setFileName(multipartFile.getOriginalFilename());
+                folderContent.setFilePath(folder.getFolderPath() + "/" + originalFilename);
+                folderContent.setPklFilePath(getPklFilename(folder.getFolderPath() + "pkl/" + originalFilename));
 
-                String key = folderContent.getOriginalFileName();
+
+                String key = folderContent.getFilePath();
                 File file = convertMultiPartFileToFile(multipartFile);
                 s3Client.putObject(new PutObjectRequest(bucketName, key, file));
+
+                folderContent.setURL(s3Client.getUrl(bucketName, key).toString());
+                folder.addFolderContent(folderContent);
+
+
                 file.delete();
             }
 
@@ -132,6 +140,7 @@ public class S3Service {
         //----------- ----------------Tratando resultado da requisição:--------------------------------
         // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl, imagem2.pkl,imagem3.pkl...]
         List<String> resultList = parseMatchesJson(response.getBody());
+        
         /////////////////////////////////////////////////////////////////
         //Construindo o caminho completo do arquivo Pkl:
         //[UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
@@ -234,7 +243,7 @@ public class S3Service {
 
     private List<String> getOriginalFileNames(List<String> pklFilenames) {
         return pklFilenames.stream()
-                .map(item -> folderContentRepository.findOriginalFileNameByPklFilename(item))
+                .map(item -> folderContentRepository.findFilePathByPKLFilePath(item))
                 .toList();
     }
 

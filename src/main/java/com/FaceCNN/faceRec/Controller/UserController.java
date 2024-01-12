@@ -42,7 +42,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest userDto) {
         try {
-            var token = new UsernamePasswordAuthenticationToken(userDto.login(), userDto.password());
+            var token = new UsernamePasswordAuthenticationToken(userDto.email(), userDto.password());
             var authentication = manager.authenticate(token);
 
             String tokenJWT = tokenService.generateToken((User) authentication.getPrincipal());
