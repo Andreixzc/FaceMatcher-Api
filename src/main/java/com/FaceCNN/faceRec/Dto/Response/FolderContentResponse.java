@@ -16,18 +16,18 @@ public record FolderContentResponse(String folderContentId, String filePath, Str
                     folderContent.getURL(),
                     folderContent.getCreatedOn(),
                     folderContent.folderId().toString(),
-                    SanitizeFileName(folderContent.getFileName()),
-                    GetFileExtension(folderContent.getFileName()
+                    sanitizeFileName(folderContent.getFileName()),
+                    getFileExtension(folderContent.getFileName()
                 )
         );
 
     }
 
-    public static String GetFileExtension(String fileName) {
+    private static String getFileExtension(String fileName) {
         return fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase().trim();
     }
 
-    public static String SanitizeFileName(String fileName) {
+    private static String sanitizeFileName(String fileName) {
         return fileName.substring(0, fileName.lastIndexOf("."));
     }
 }

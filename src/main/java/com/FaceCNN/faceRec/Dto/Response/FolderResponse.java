@@ -8,7 +8,7 @@ public record FolderResponse(String name, String path, String id, String userId)
     public static FolderResponse fromFolder(Folder folder) {
 
         return new FolderResponse(
-                Sanitize(folder.getFolderName()),
+                sanitize(folder.getFolderName()),
                 folder.getFolderPath(),
                 folder.getId().toString(),
                 folder.userId().toString()
@@ -17,7 +17,7 @@ public record FolderResponse(String name, String path, String id, String userId)
     }
 
 
-    public static String Sanitize(String property){
+    private static String sanitize(String property){
         return property.replaceAll("/", "").replaceAll(" ", "").trim();
 
     }

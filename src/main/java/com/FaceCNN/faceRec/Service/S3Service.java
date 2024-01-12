@@ -140,9 +140,7 @@ public class S3Service {
         //----------- ----------------Tratando resultado da requisição:--------------------------------
         // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl, imagem2.pkl,imagem3.pkl...]
         List<String> resultList = parseMatchesJson(response.getBody());
-
-        System.out.println(response.getBody().toString());
-
+        
         /////////////////////////////////////////////////////////////////
         //Construindo o caminho completo do arquivo Pkl:
         //[UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
