@@ -1,6 +1,6 @@
 package com.FaceCNN.faceRec.util;
 
-import com.FaceCNN.faceRec.Model.User;
+import com.FaceCNN.faceRec.model.User;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 public class PrincipalUtils {
