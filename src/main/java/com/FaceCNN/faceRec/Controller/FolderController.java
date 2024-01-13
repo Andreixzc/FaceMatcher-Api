@@ -21,12 +21,10 @@ public class FolderController {
     private final FolderService folderService;
     private final S3Service s3Service;
 
-    //Não sei se compensa fazer autenticação por um jwt por exemplo, talvez agnt podia deixar gambiarra e validar
-    //se o cara ta logado e se o ID bate, passando o USER pelo body dessa req
-    @GetMapping("/list/{id}")
-    public ResponseEntity<List<FolderResponse>> listFolderByUser(@PathVariable UUID id) {
+    @GetMapping("/list/{userId}")
+    public ResponseEntity<List<FolderResponse>> listFolderByUser(@PathVariable UUID userId) {
         try {
-            List<FolderResponse> folders = folderService.findFolderByUserId(id);
+            List<FolderResponse> folders = folderService.findFolderByUserId(userId);
             return new ResponseEntity<>(folders, HttpStatus.OK);
 
         } catch (Exception e) {
@@ -38,6 +36,8 @@ public class FolderController {
     public ResponseEntity<String> deleteFolder(@PathVariable UUID id) {
         try {
             Folder folder = folderService.findFolderById(id);
+
+            folderService.verifyFolderOwner(folder);
 
             s3Service.deleteFolder(folder.getFolderPath());
             folderService.deleteFolder(folder);
