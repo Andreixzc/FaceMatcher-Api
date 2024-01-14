@@ -1,53 +1,56 @@
 package com.FaceCNN.faceRec.service;
 
-import com.FaceCNN.faceRec.dto.Response.FolderResponseOld;
-import com.FaceCNN.faceRec.dto.Response.MatchesResponse;
+import com.FaceCNN.faceRec.dto.Response.FolderContentResponse;
+import com.FaceCNN.faceRec.dto.Response.FolderResponse;
 import com.FaceCNN.faceRec.model.Folder;
 import com.FaceCNN.faceRec.model.FolderContent;
 import com.FaceCNN.faceRec.model.User;
 import com.FaceCNN.faceRec.repository.FolderContentRepository;
 import com.FaceCNN.faceRec.repository.UserRepository;
-import com.amazonaws.HttpMethod;
-import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class S3Service {
 
     private static final String PICKLE_FILE_SUFFIX = ".pkl";
     private static final String LAMBDA_FUNCTION_URL = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
 
+    private static final Logger log = LoggerFactory.getLogger(S3Service.class);
     @Value("${application.bucket.name}")
     private String bucketName;
 
     private final AmazonS3 s3Client;
     private final UserRepository userRepository;
     private final FolderContentRepository folderContentRepository;
+    private final FolderContentService folderContentService;
     private final HttpService httpService;
 
-    public FolderResponseOld uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
+    public FolderResponse uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
         try {
+
+            log.info("Starting the file upload process");
+
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + userId));
             Optional<Folder> existingFolder = user.getFolders().stream()
@@ -60,6 +63,7 @@ public class S3Service {
             } else {
                 folder.setFolderPath(buildFolderPath(user.getId(), folderName));
                 folder.setFolderName(folderName);
+                folder.setFolderPklPath(folder.getFolderPath() + "pkl");
                 user.addFolder(folder);
             }
 
@@ -81,9 +85,14 @@ public class S3Service {
 
             userRepository.save(user);
 
-            return new FolderResponseOld(folder.getFolderPath() + "pkl", "Ok");
-        } catch (Exception e) {
-            return new FolderResponseOld(null, "Erro: " + e.getMessage());
+            log.info("Files have been successfully uploaded");
+
+            return FolderResponse.fromFolder(folder);
+
+
+        } catch (Exception ex) {
+            log.error("Error during file upload process", ex);
+            throw ex;
         }
     }
 
@@ -107,42 +116,52 @@ public class S3Service {
         }
     }
 
+    public void deleteFolderContent(FolderContent folderContent) {
+
+        s3Client.deleteObject(bucketName, folderContent.getFilePath());
+        s3Client.deleteObject(bucketName, folderContent.getPklFilePath());
+    }
+
     private String buildFolderPath(UUID userId, String folderName) {
         Path path = Paths.get(userId.toString(), folderName);
         return path.toString().replace(File.separator, "/");
     }
 
-    public MatchesResponse checkMatch(MultipartFile multipartFile, String pklFolderToSearch) {
-        //-------------Upload da imagem de referência pro bucket---------------
-        String key = "tmp/" + multipartFile.getOriginalFilename();
-        sendMultipartFileToS3(multipartFile, key);
-        ///////////////////////////////////////////////////////////////////////////////////////
+    public List<FolderContentResponse> checkMatch(MultipartFile multipartFile, String pklFolderToSearch) {
 
-        //---------Invocando a função lambda que retorna o nome dos arquivos em PKL que houveram matches--------
-        String requestBody = buildLambdaRequestBody(key, pklFolderToSearch);
-        ResponseEntity<String> response = httpService.post(LAMBDA_FUNCTION_URL, requestBody);
-        ///////////////////////////////////////////////////////////////////////////////////////
+        try {
 
-        //----------- ----------------Tratando resultado da requisição:--------------------------------
-        // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl, imagem2.pkl,imagem3.pkl...]
-        List<String> resultList = parseMatchesJson(response.getBody());
-        
-        /////////////////////////////////////////////////////////////////
-        //Construindo o caminho completo do arquivo Pkl:
-        //[UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
-        List<String> matchesKey = buildMatchesPath(resultList, pklFolderToSearch);
+            log.info("starting the process of finding matches between the reference image and the user's bucket images");
 
-        //Extraindo path original do banco de dados das imagens, sem ser do arquivo em PKL.
-        List<String> originalMatchPath = getOriginalFileNames(matchesKey);
-        //originalMatchPath = [UUID/Evento1/imagem1.png,UUID/Evento1/imagem2.jpeg,UUID/Evento1/imagem3.png]
+            //-------------Upload da imagem de referência pro bucket---------------
+            String key = "tmp/" + multipartFile.getOriginalFilename();
+            sendMultipartFileToS3(multipartFile, key);
+            ///////////////////////////////////////////////////////////////////////////////////////
 
-        List<String> imagesUrlList = originalMatchPath.stream()
-                .map(this::getImageUrlByFilePath)
-                .filter(Objects::nonNull)
-                .toList();
+            //---------Invocando a função lambda que retorna o nome dos arquivos em PKL que houveram matches--------
+            String requestBody = buildLambdaRequestBody(key, pklFolderToSearch);
+            ResponseEntity<String> response = httpService.post(LAMBDA_FUNCTION_URL, requestBody);
+            ///////////////////////////////////////////////////////////////////////////////////////
 
-        //Itero sobre essa lista, e vou pegando a url da imagem de cada um dos caminhos e retorno pro controller:
-        return new MatchesResponse(imagesUrlList);
+            //----------- ----------------Tratando resultado da requisição:--------------------------------
+            // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl, imagem2.pkl,imagem3.pkl...]
+            List<String> resultList = parseMatchesJson(response.getBody());
+
+            /////////////////////////////////////////////////////////////////
+            //Construindo o caminho completo do arquivo Pkl:
+            //[UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
+            List<String> matchesKey = buildMatchesPath(resultList, pklFolderToSearch);
+
+            //Extraindo path original do banco de dados das imagens, sem ser do arquivo em PKL.
+            List<String> originalMatchPath = getOriginalFileNames(matchesKey);
+
+            return folderContentService.findFolderContentsByFilePaths(originalMatchPath);
+
+        }catch(Exception ex) {
+            log.error("Error during the process of finding image references", ex);
+            throw ex;
+        }
+
     }
 
     private void sendMultipartFileToS3(MultipartFile multipartFile, String key) {
@@ -152,16 +171,16 @@ public class S3Service {
     }
 
     private String buildLambdaRequestBody(String refPath, String pickleFolderKey) {
-        // Cria corpo da requisição em JSON:
+
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.writeValueAsString(Map.of(
                     "ref_path", refPath,
                     "pickle_folder_key", pickleFolderKey,
                     "bucket_name", bucketName));
-        } catch (JsonProcessingException e) {
-            log.error("Error building Lambda request body", e);
-            throw new RuntimeException("Error building Lambda request body", e);
+        } catch (JsonProcessingException ex) {
+            log.error("Error building Lambda request body", ex);
+            throw new RuntimeException("Error building Lambda request body", ex);
         }
     }
 
@@ -179,8 +198,8 @@ public class S3Service {
                     resultList.add(photo.asText());
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
 
         return resultList;
@@ -190,8 +209,8 @@ public class S3Service {
         File convertedFile = new File(file.getOriginalFilename());
         try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
             fos.write(file.getBytes());
-        } catch (IOException e) {
-            log.error("Error converting multipartFile to file", e);
+        } catch (IOException ex) {
+            log.error("Error converting multipartFile to file", ex);
         }
         return convertedFile;
     }
@@ -230,23 +249,4 @@ public class S3Service {
                 .toList();
     }
 
-    private String getImageUrlByFilePath(String filePath) {
-        try {
-            Date expiration = new Date();
-            long expTimeMillis = expiration.getTime() + 1000 * 60 * 60; // 1 hour
-            expiration.setTime(expTimeMillis);
-
-            GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, filePath)
-                    .withMethod(HttpMethod.GET)
-                    .withExpiration(expiration);
-
-            URL url = s3Client.generatePresignedUrl(generatePresignedUrlRequest);
-
-            return url.toString();
-        } catch (SdkClientException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
 }

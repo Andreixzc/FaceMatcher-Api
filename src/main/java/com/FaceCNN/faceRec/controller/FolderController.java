@@ -22,10 +22,21 @@ public class FolderController {
     private final S3Service s3Service;
 
     @GetMapping("/list/{userId}")
-    public ResponseEntity<List<FolderResponse>> listFolderByUser(@PathVariable UUID userId) {
+    public ResponseEntity<List<FolderResponse>> listFoldersByUserId(@PathVariable UUID userId) {
         try {
-            List<FolderResponse> folders = folderService.findFolderByUserId(userId);
+            List<FolderResponse> folders = folderService.findFoldersByUserId(userId);
             return new ResponseEntity<>(folders, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<FolderResponse> listFolderById(@PathVariable UUID id) {
+        try {
+            Folder folder = folderService.findFolderById(id);
+            return new ResponseEntity<>(FolderResponse.fromFolder(folder), HttpStatus.OK);
 
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

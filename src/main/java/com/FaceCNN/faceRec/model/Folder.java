@@ -29,6 +29,9 @@ public class Folder {
     @Column(unique = true)
     private String folderPath;
 
+    @Column(unique = true, nullable = true)
+    private String folderPklPath;
+
     @Column()
     private String folderName;
 
