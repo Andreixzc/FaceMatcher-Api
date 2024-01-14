@@ -2,16 +2,17 @@ package com.FaceCNN.faceRec.dto.Response;
 
 import com.FaceCNN.faceRec.model.Folder;
 
-public record FolderResponse(String name, String path, String id, String userId){
+public record FolderResponse(String name, String id, String userId, String folderPath, String folderPklPath){
 
 
     public static FolderResponse fromFolder(Folder folder) {
 
         return new FolderResponse(
                 sanitize(folder.getFolderName()),
-                folder.getFolderPath(),
                 folder.getId().toString(),
-                folder.userId().toString()
+                folder.userId().toString(),
+                folder.getFolderPath(),
+                folder.getFolderPklPath()
         );
 
     }

@@ -17,7 +17,7 @@ public class FolderService {
 
     private final FolderRepository folderRepository;
 
-    public List<FolderResponse> findFolderByUserId(UUID userId) {
+    public List<FolderResponse> findFoldersByUserId(UUID userId) {
 
         List<Folder> result = folderRepository.findByUserId(userId);
         return result.stream().map(FolderResponse::fromFolder).toList();
