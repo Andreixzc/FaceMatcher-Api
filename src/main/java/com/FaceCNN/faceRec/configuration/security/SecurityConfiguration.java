@@ -34,7 +34,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/h2-console/**").permitAll()
 //                        .requestMatchers("/folder/**").permitAll()
                         .requestMatchers("/s3/**").permitAll()
-                        .anyRequest().authenticated())
+                        // .anyRequest().authenticated())
+                        .anyRequest().permitAll())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)); // Disable X-Frame-Options for h2-console
 
