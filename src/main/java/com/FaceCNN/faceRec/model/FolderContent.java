@@ -14,6 +14,7 @@ import org.springframework.data.annotation.CreatedDate;
 @Setter
 @NoArgsConstructor
 public class FolderContent {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
@@ -24,10 +25,10 @@ public class FolderContent {
     @Column(unique = true)
     private String pklFilePath;
 
-    @Column(nullable = true)
-    private String URL;
+    @Column
+    private String url;
 
-    @Column(nullable = true)
+    @Column
     private String fileName;
 
     @CreatedDate
@@ -35,13 +36,11 @@ public class FolderContent {
     private Date createdOn;
     
     @ManyToOne
-    @JoinColumn(name = "folder_id")
     private Folder folder;
 
     public UUID folderId() {
         return folder.getId();
     }
-
 
     @PrePersist
     public void prePersist() {

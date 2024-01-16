@@ -13,7 +13,7 @@ public record FolderContentResponse(String folderContentId, String filePath, Str
                 (
                     folderContent.getId().toString(),
                     folderContent.getFilePath(),
-                    folderContent.getURL(),
+                    folderContent.getUrl(),
                     folderContent.getCreatedOn(),
                     folderContent.folderId().toString(),
                     sanitizeFileName(folderContent.getFileName()),

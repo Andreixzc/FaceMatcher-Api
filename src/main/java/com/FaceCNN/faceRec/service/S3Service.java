@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +45,12 @@ public class S3Service {
     private final FolderContentRepository folderContentRepository;
     private final FolderContentService folderContentService;
     private final HttpService httpService;
+    private final ObjectMapper objectMapper;
 
     public FolderResponse uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
         try {
 
             log.info("Starting the file upload process");
-
 
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new NoSuchElementException("User not found with ID: " + userId));
@@ -79,7 +80,7 @@ public class S3Service {
 
                 sendMultipartFileToS3(multipartFile, key);
 
-                folderContent.setURL(s3Client.getUrl(bucketName, key).toString());
+                folderContent.setUrl(s3Client.getUrl(bucketName, key).toString());
                 folder.addFolderContent(folderContent);
             }
 
@@ -88,7 +89,6 @@ public class S3Service {
             log.info("Files have been successfully uploaded");
 
             return FolderResponse.fromFolder(folder);
-
 
         } catch (Exception ex) {
             log.error("Error during file upload process", ex);
@@ -157,7 +157,7 @@ public class S3Service {
 
             return folderContentService.findFolderContentsByFilePaths(originalMatchPath);
 
-        }catch(Exception ex) {
+        } catch (Exception ex) {
             log.error("Error during the process of finding image references", ex);
             throw ex;
         }
@@ -171,9 +171,7 @@ public class S3Service {
     }
 
     private String buildLambdaRequestBody(String refPath, String pickleFolderKey) {
-
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.writeValueAsString(Map.of(
                     "ref_path", refPath,
                     "pickle_folder_key", pickleFolderKey,
@@ -189,7 +187,6 @@ public class S3Service {
         List<String> resultList = new ArrayList<>();
 
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(jsonResponse);
 
             if (jsonNode.has("matching_photos") && jsonNode.get("matching_photos").isArray()) {

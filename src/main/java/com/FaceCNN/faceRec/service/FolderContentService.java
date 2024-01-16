@@ -1,4 +1,5 @@
 package com.FaceCNN.faceRec.service;
+
 import com.FaceCNN.faceRec.dto.Response.FolderContentResponse;
 import com.FaceCNN.faceRec.model.Folder;
 import com.FaceCNN.faceRec.model.FolderContent;
@@ -23,20 +24,25 @@ public class FolderContentService {
 
     public List<FolderContentResponse> findFolderContentByFolderId(UUID folderId) {
 
-        List<FolderContent> result = this.folderContentRepository.findFolderContentByFolderId(folderId);
+        List<FolderContent> result = folderContentRepository.findFolderContentByFolderId(folderId);
         result.sort(Comparator.comparing(FolderContent::getCreatedOn).reversed());
 
         return result.stream().map(FolderContentResponse::fromFolderContent).toList();
 
     }
 
+    public FolderContent findFolderContentById(UUID folderContentId) {
+        return folderContentRepository.findById(folderContentId)
+                .orElseThrow(() -> new RuntimeException("Folder Content not found"));
+    }
+
     public List<FolderContentResponse> findFolderContentsByFilePaths(List<String> filePaths) {
 
         List<FolderContent> result = new ArrayList<>();
 
-        for(String filePath : filePaths) {
-            Optional<FolderContent> folderContent = this.folderContentRepository.findFolderContentByFilePath(filePath);
-            if(folderContent.isEmpty()) {
+        for (String filePath : filePaths) {
+            Optional<FolderContent> folderContent = folderContentRepository.findFolderContentByFilePath(filePath);
+            if (folderContent.isEmpty()) {
                 continue;
             }
             result.add(folderContent.get());
@@ -48,7 +54,7 @@ public class FolderContentService {
 
     }
 
-    public void deleteById(FolderContent folderContent) {
+    public void deleteFolderContent(FolderContent folderContent) {
 
         try {
 
@@ -59,20 +65,18 @@ public class FolderContentService {
             // Existem work arounds que inserem um arquivo temporário na pasta antes da exclusão, mas nesse caso achei melhor
             // somente deletar a pasta junto
 
-            if(folderAmountOfFiles <= 1) {
+            if (folderAmountOfFiles <= 1) {
                 folderRepository.deleteById(folder.getId());
                 return;
             }
 
-            folderContentRepository.deleteFolderContentById(folderContent.getId());
+            folder.removeFolderContent(folderContent);
+            folderContentRepository.deleteById(folderContent.getId());
 
-
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             log.error("Error during delete folder content operation", ex);
         }
 
-
     }
-
 
 }

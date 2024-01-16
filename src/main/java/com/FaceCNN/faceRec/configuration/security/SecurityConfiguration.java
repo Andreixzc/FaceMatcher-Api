@@ -26,14 +26,11 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-//                .cors(c -> c.configure()).and() // Enable CORS globally
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/user/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-//                        .requestMatchers("/folder/**").permitAll()
-                        .requestMatchers("/s3/**").permitAll()
                         // .anyRequest().authenticated())
                         .anyRequest().permitAll())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
