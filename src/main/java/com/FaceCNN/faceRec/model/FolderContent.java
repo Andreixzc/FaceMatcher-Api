@@ -33,17 +33,17 @@ public class FolderContent {
 
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdOn;
+    private Date createdAt;
     
     @ManyToOne
     private Folder folder;
 
-    public UUID folderId() {
-        return folder.getId();
-    }
-
     @PrePersist
     public void prePersist() {
-        this.createdOn = new Date();
+        this.createdAt = new Date();
+    }
+
+    public UUID folderId() {
+        return folder.getId();
     }
 }

@@ -8,9 +8,11 @@ import com.FaceCNN.faceRec.repository.FolderRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -23,12 +25,9 @@ public class FolderContentService {
     private final FolderRepository folderRepository;
 
     public List<FolderContentResponse> findFolderContentByFolderId(UUID folderId) {
-
-        List<FolderContent> result = folderContentRepository.findFolderContentByFolderId(folderId);
-        result.sort(Comparator.comparing(FolderContent::getCreatedOn).reversed());
-
-        return result.stream().map(FolderContentResponse::fromFolderContent).toList();
-
+        return folderContentRepository.findFolderContentByFolderId(folderId, Sort.by("createdAt").descending()).stream()
+                .map(FolderContentResponse::fromFolderContent)
+                .toList();
     }
 
     public FolderContent findFolderContentById(UUID folderContentId) {
@@ -37,21 +36,9 @@ public class FolderContentService {
     }
 
     public List<FolderContentResponse> findFolderContentsByFilePaths(List<String> filePaths) {
-
-        List<FolderContent> result = new ArrayList<>();
-
-        for (String filePath : filePaths) {
-            Optional<FolderContent> folderContent = folderContentRepository.findFolderContentByFilePath(filePath);
-            if (folderContent.isEmpty()) {
-                continue;
-            }
-            result.add(folderContent.get());
-        }
-
-        result.sort(Comparator.comparing(FolderContent::getCreatedOn).reversed());
-
-        return result.stream().map(FolderContentResponse::fromFolderContent).toList();
-
+        return folderContentRepository.findFolderContentByFilePathInOrderByCreatedAtDesc(filePaths).stream()
+                .map(FolderContentResponse::fromFolderContent)
+                .toList();
     }
 
     public void deleteFolderContent(FolderContent folderContent) {

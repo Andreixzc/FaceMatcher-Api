@@ -1,16 +1,18 @@
 package com.FaceCNN.faceRec.controller;
 
+import com.FaceCNN.faceRec.dto.Response.FolderResponse;
+import com.FaceCNN.faceRec.model.Folder;
+import com.FaceCNN.faceRec.service.FolderService;
+import com.FaceCNN.faceRec.service.S3Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.UUID;
 
-import com.FaceCNN.faceRec.dto.Response.FolderResponse;
-import com.FaceCNN.faceRec.model.Folder;
-import com.FaceCNN.faceRec.service.S3Service;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
-import com.FaceCNN.faceRec.service.FolderService;
+import static com.FaceCNN.faceRec.util.PrincipalUtils.getLoggedUser;
 
 
 @RestController
@@ -21,12 +23,11 @@ public class FolderController {
     private final FolderService folderService;
     private final S3Service s3Service;
 
-    @GetMapping("/list/{userId}")
-    public ResponseEntity<List<FolderResponse>> listFoldersByUserId(@PathVariable UUID userId) {
+    @GetMapping("/list")
+    public ResponseEntity<List<FolderResponse>> listFoldersFromLoggedUser() {
         try {
-            List<FolderResponse> folders = folderService.findFoldersByUserId(userId);
-            return new ResponseEntity<>(folders, HttpStatus.OK);
-
+            var userId = getLoggedUser().getId();
+            return new ResponseEntity<>(folderService.findFoldersByUserId(userId), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

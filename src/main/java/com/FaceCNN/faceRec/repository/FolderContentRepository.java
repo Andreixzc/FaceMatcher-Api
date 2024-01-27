@@ -1,6 +1,7 @@
 package com.FaceCNN.faceRec.repository;
 
 import com.FaceCNN.faceRec.model.FolderContent;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -13,7 +14,7 @@ public interface FolderContentRepository extends JpaRepository<FolderContent, UU
     @Query("SELECT fc.filePath FROM FolderContent fc WHERE fc.pklFilePath = :pklFilePath")
     String findFilePathByPKLFilePath(String pklFilePath);
 
-    List<FolderContent> findFolderContentByFolderId(UUID folderId);
+    List<FolderContent> findFolderContentByFolderId(UUID folderId, Sort sort);
 
-    Optional<FolderContent> findFolderContentByFilePath(String filePath);
+    List<FolderContent> findFolderContentByFilePathInOrderByCreatedAtDesc(List<String> filePaths);
 }

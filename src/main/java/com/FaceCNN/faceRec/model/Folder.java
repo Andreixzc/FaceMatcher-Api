@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,11 +30,20 @@ public class Folder {
     @Column
     private String folderName;
 
+    @CreatedDate
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
+
     @ManyToOne
     private User user;
 
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FolderContent> folderContents = new ArrayList<>();
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = new Date();
+    }
 
     public UUID userId() {
         return user.getId();

@@ -14,7 +14,7 @@ public record FolderContentResponse(String folderContentId, String filePath, Str
                     folderContent.getId().toString(),
                     folderContent.getFilePath(),
                     folderContent.getUrl(),
-                    folderContent.getCreatedOn(),
+                    folderContent.getCreatedAt(),
                     folderContent.folderId().toString(),
                     sanitizeFileName(folderContent.getFileName()),
                     getFileExtension(folderContent.getFileName()
