@@ -14,7 +14,6 @@ import java.util.UUID;
 
 import static com.FaceCNN.faceRec.util.PrincipalUtils.getLoggedUser;
 
-
 @RestController
 @RequestMapping("/folder")
 @RequiredArgsConstructor
@@ -24,24 +23,15 @@ public class FolderController {
     private final S3Service s3Service;
 
     @GetMapping("/list")
-    public ResponseEntity<List<FolderResponse>> listFoldersFromLoggedUser() {
-        try {
-            var userId = getLoggedUser().getId();
-            return new ResponseEntity<>(folderService.findFoldersByUserId(userId), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public List<FolderResponse> listFoldersFromLoggedUser() {
+        var userId = getLoggedUser().getId();
+        return folderService.findFoldersByUserId(userId);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<FolderResponse> listFolderById(@PathVariable UUID id) {
-        try {
-            Folder folder = folderService.findFolderById(id);
-            return new ResponseEntity<>(FolderResponse.fromFolder(folder), HttpStatus.OK);
-
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public FolderResponse listFolderById(@PathVariable UUID id) {
+        Folder folder = folderService.findFolderById(id);
+        return FolderResponse.fromFolder(folder);
     }
 
     @DeleteMapping("/{id}")
@@ -60,5 +50,4 @@ public class FolderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 }

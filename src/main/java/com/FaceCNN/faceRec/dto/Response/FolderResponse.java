@@ -2,7 +2,9 @@ package com.FaceCNN.faceRec.dto.Response;
 
 import com.FaceCNN.faceRec.model.Folder;
 
-public record FolderResponse(String name, String id, String userId, String folderPath, String folderPklPath){
+import java.util.Date;
+
+public record FolderResponse(String name, String id, String userId, String folderPath, String folderPklPath, Date createdAt){
 
 
     public static FolderResponse fromFolder(Folder folder) {
@@ -12,7 +14,8 @@ public record FolderResponse(String name, String id, String userId, String folde
                 folder.getId().toString(),
                 folder.userId().toString(),
                 folder.getFolderPath(),
-                folder.getFolderPklPath()
+                folder.getFolderPklPath(),
+                folder.getCreatedAt()
         );
 
     }

@@ -29,7 +29,7 @@ public class UserController {
     private final TokenService tokenService;
     private final AuthenticationManager manager;
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<?> createUser(@RequestBody @Valid User user) {
         CreatedUser createdUser = userService.create(user);
         if (createdUser != null) {

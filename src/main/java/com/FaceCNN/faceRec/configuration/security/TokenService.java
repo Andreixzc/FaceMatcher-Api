@@ -32,16 +32,12 @@ public class TokenService {
     }
 
     public String getSubject(String tokenJWT) {
-        try {
-            var algorithm = Algorithm.HMAC256(secret);
-            return JWT.require(algorithm)
-                    .withIssuer("FaceRec")
-                    .build()
-                    .verify(tokenJWT)
-                    .getSubject();
-        } catch (JWTVerificationException exception) {
-            throw new RuntimeException("Invalid or expired JWT token!", exception);
-        }
+        var algorithm = Algorithm.HMAC256(secret);
+        return JWT.require(algorithm)
+                .withIssuer("FaceRec")
+                .build()
+                .verify(tokenJWT)
+                .getSubject();
     }
 
     private Instant expirationDate() {

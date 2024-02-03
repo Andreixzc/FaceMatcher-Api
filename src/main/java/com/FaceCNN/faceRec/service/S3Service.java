@@ -62,6 +62,7 @@ public class S3Service {
             if (existingFolder.isPresent()) {
                 folder = existingFolder.get();
             } else {
+                folder.setCreatedAt(new Date());
                 folder.setFolderPath(buildFolderPath(user.getId(), folderName));
                 folder.setFolderName(folderName);
                 folder.setFolderPklPath(folder.getFolderPath() + "pkl");
@@ -72,6 +73,7 @@ public class S3Service {
 
                 FolderContent folderContent = new FolderContent();
                 String originalFilename = multipartFile.getOriginalFilename();
+                folderContent.setCreatedAt(new Date());
                 folderContent.setFileName(multipartFile.getOriginalFilename());
                 folderContent.setFilePath(folder.getFolderPath() + "/" + originalFilename);
                 folderContent.setPklFilePath(getPklFilename(folder.getFolderPath() + "pkl/" + originalFilename));

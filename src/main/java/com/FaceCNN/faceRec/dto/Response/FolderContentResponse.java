@@ -5,22 +5,19 @@ import com.FaceCNN.faceRec.model.FolderContent;
 import java.util.Date;
 
 public record FolderContentResponse(String folderContentId, String filePath, String URL,
-                                    Date createdOn, String folderId, String fileName , String fileExtension){
+                                    Date createdAt, String folderId, String fileName, String fileExtension) {
 
     public static FolderContentResponse fromFolderContent(FolderContent folderContent) {
 
-        return new FolderContentResponse
-                (
-                    folderContent.getId().toString(),
-                    folderContent.getFilePath(),
-                    folderContent.getUrl(),
-                    folderContent.getCreatedAt(),
-                    folderContent.folderId().toString(),
-                    sanitizeFileName(folderContent.getFileName()),
-                    getFileExtension(folderContent.getFileName()
-                )
+        return new FolderContentResponse(
+                folderContent.getId().toString(),
+                folderContent.getFilePath(),
+                folderContent.getUrl(),
+                folderContent.getCreatedAt(),
+                folderContent.folderId().toString(),
+                sanitizeFileName(folderContent.getFileName()),
+                getFileExtension(folderContent.getFileName())
         );
-
     }
 
     private static String getFileExtension(String fileName) {

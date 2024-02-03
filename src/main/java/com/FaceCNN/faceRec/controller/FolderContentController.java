@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-
 @RestController
 @RequestMapping("/folder-content")
 @RequiredArgsConstructor
@@ -25,34 +24,22 @@ public class FolderContentController {
     private final FolderService folderService;
 
     @GetMapping("/list/{folderId}")
-    public ResponseEntity<List<FolderContentResponse>> listFolderContentByFolderId(@PathVariable UUID folderId) {
-        try {
-            List<FolderContentResponse> folderContent = folderContentService.findFolderContentByFolderId(folderId);
-            return new ResponseEntity<>(folderContent, HttpStatus.OK);
-
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public List<FolderContentResponse> listFolderContentByFolderId(@PathVariable UUID folderId) {
+        return folderContentService.findFolderContentByFolderId(folderId);
     }
 
     @Transactional
     @DeleteMapping("/{folderContentId}")
-    public ResponseEntity<List<FolderContentResponse>> deleteFolderContentByFolderContentId(@PathVariable UUID folderContentId) {
-        try {
+    public ResponseEntity<Void> deleteFolderContentByFolderContentId(@PathVariable UUID folderContentId) {
+        FolderContent folderContent = folderContentService.findFolderContentById(folderContentId);
 
-            FolderContent folderContent = folderContentService.findFolderContentById(folderContentId);
+        folderService.verifyFolderOwner(folderContent.getFolder());
 
-            folderService.verifyFolderOwner(folderContent.getFolder());
+        s3Service.deleteFolderContent(folderContent);
 
-            s3Service.deleteFolderContent(folderContent);
+        folderContentService.deleteFolderContent(folderContent);
 
-            folderContentService.deleteFolderContent(folderContent);
-
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 }
