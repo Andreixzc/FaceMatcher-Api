@@ -30,8 +30,9 @@ public class S3Controller {
 
     @PostMapping("/ref")
     public List<FolderContentResponse> uploadRef(@RequestParam(value = "file") MultipartFile file,
-                                                 @RequestParam(value = "folderPath") String pklFolderPath) {
-        return s3Service.checkMatch(file, pklFolderPath);
+                                                 @RequestParam(value = "folderName") String pklFolderName) {
+        var userId = getLoggedUser().getId();
+        return s3Service.checkMatch(file, userId.toString() + "/" + pklFolderName);
     }
 
 }
