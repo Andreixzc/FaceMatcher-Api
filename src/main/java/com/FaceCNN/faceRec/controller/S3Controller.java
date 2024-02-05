@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.FaceCNN.faceRec.util.PrincipalUtils.getLoggedUser;
 
@@ -30,9 +31,15 @@ public class S3Controller {
 
     @PostMapping("/ref")
     public List<FolderContentResponse> uploadRef(@RequestParam(value = "file") MultipartFile file,
-                                                 @RequestParam(value = "folderName") String pklFolderName) {
+                                                 @RequestParam(value = "folderPath") String pklFolderName) {
         var userId = getLoggedUser().getId();
-        return s3Service.checkMatch(file, userId.toString() + "/" + pklFolderName);
+        String parsedId = pklFolderName.toString().split("/")[0];
+        System.out.println(parsedId);
+        if (userId.toString().equals(parsedId)) {
+            return s3Service.checkMatch(file, pklFolderName);
+            
+        }
+        throw new RuntimeException("Not folder owner");
     }
 
 }
