@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.UUID;
-
 import static com.FaceCNN.faceRec.util.PrincipalUtils.getLoggedUser;
 
 @RestController
