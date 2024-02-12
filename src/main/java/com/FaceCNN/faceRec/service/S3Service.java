@@ -7,6 +7,7 @@ import com.FaceCNN.faceRec.model.FolderContent;
 import com.FaceCNN.faceRec.model.User;
 import com.FaceCNN.faceRec.repository.FolderContentRepository;
 import com.FaceCNN.faceRec.repository.UserRepository;
+import com.FaceCNN.faceRec.util.FolderUtils;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,11 +19,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import org.slf4j.Logger;
@@ -31,9 +32,8 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
-public class S3Service {
+public class S3Service extends FolderUtils {
 
-    private static final String PICKLE_FILE_SUFFIX = ".pkl";
     private static final String LAMBDA_FUNCTION_URL = "https://cixhwmjnywefsq3zi3m6aezwk40eojlm.lambda-url.sa-east-1.on.aws/";
 
     private static final Logger log = LoggerFactory.getLogger(S3Service.class);
@@ -46,6 +46,7 @@ public class S3Service {
     private final FolderContentService folderContentService;
     private final HttpService httpService;
     private final ObjectMapper objectMapper;
+
 
     public FolderResponse uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
         try {
@@ -122,11 +123,7 @@ public class S3Service {
 
         s3Client.deleteObject(bucketName, folderContent.getFilePath());
         s3Client.deleteObject(bucketName, folderContent.getPklFilePath());
-    }
 
-    private String buildFolderPath(UUID userId, String folderName) {
-        Path path = Paths.get(userId.toString(), folderName);
-        return path.toString().replace(File.separator, "/");
     }
 
     public List<FolderContentResponse> checkMatch(MultipartFile multipartFile, String pklFolderToSearch) {
@@ -166,11 +163,7 @@ public class S3Service {
 
     }
 
-    private void sendMultipartFileToS3(MultipartFile multipartFile, String key) {
-        File file = convertMultiPartFileToFile(multipartFile);
-        s3Client.putObject(new PutObjectRequest(bucketName, key, file));
-        file.delete();
-    }
+
 
     private String buildLambdaRequestBody(String refPath, String pickleFolderKey) {
         try {
@@ -184,7 +177,6 @@ public class S3Service {
         }
     }
 
-    //Métodos auxiliares:
     private List<String> parseMatchesJson(String jsonResponse) {
         List<String> resultList = new ArrayList<>();
 
@@ -204,48 +196,23 @@ public class S3Service {
         return resultList;
     }
 
-    private File convertMultiPartFileToFile(MultipartFile file) {
-        File convertedFile = new File(file.getOriginalFilename());
-        try (FileOutputStream fos = new FileOutputStream(convertedFile)) {
-            fos.write(file.getBytes());
-        } catch (IOException ex) {
-            log.error("Error converting multipartFile to file", ex);
-        }
-        return convertedFile;
-    }
-
-    public String getPklFilename(String str) {
-        int posToInsert = str.lastIndexOf('.');
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < posToInsert; i++) {
-            sb.append(str.charAt(i));
-        }
-        sb.append(PICKLE_FILE_SUFFIX);
-        return sb.toString();
-    }
-
-    private List<String> buildMatchesPath(List<String> matches, String pklFolderPath) {
-        String suffix = "pkl";
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < pklFolderPath.lastIndexOf(suffix); i++) {
-            sb.append(pklFolderPath.charAt(i));
-        }
-        String prefix = sb.toString();
-        prefix = prefix + "pkl/";
-        for (int i = 0; i < matches.size(); i++) {
-            String originalStr = matches.get(i);
-            String concatenatedString = prefix + originalStr;
-            matches.set(i, concatenatedString);
-        }
-
-        return matches;
-    }
-
     private List<String> getOriginalFileNames(List<String> pklFilenames) {
         return pklFilenames.stream()
                 .map(folderContentRepository::findFilePathByPKLFilePath)
                 .toList();
+    }
+
+    public void sendMultipartFileToS3(MultipartFile multipartFile, String key) {
+        File file = convertMultiPartFileToFile(multipartFile);
+        s3Client.putObject(new PutObjectRequest(bucketName, key, file));
+        file.delete();
+    }
+
+    public void initializeS3Folder(String key) {
+        byte[] emptyContent = new byte[0];
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(emptyContent);
+
+        s3Client.putObject(bucketName, key, inputStream, new ObjectMetadata());
     }
 
 }

@@ -1,9 +1,11 @@
 package com.FaceCNN.faceRec.controller;
 
+import com.FaceCNN.faceRec.dto.Request.FolderRequest;
 import com.FaceCNN.faceRec.dto.Response.FolderResponse;
 import com.FaceCNN.faceRec.model.Folder;
 import com.FaceCNN.faceRec.service.FolderService;
 import com.FaceCNN.faceRec.service.S3Service;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,11 @@ public class FolderController {
     public FolderResponse listFolderById(@PathVariable UUID id) {
         Folder folder = folderService.findFolderById(id);
         return FolderResponse.fromFolder(folder);
+    }
+
+    @PostMapping("")
+    public FolderResponse createFolder(@RequestBody @Valid FolderRequest folderRequest) {
+        return folderService.createFolder(folderRequest);
     }
 
     @DeleteMapping("/{id}")

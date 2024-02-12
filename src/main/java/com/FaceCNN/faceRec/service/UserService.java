@@ -1,6 +1,6 @@
 package com.FaceCNN.faceRec.service;
 
-import com.FaceCNN.faceRec.dto.Response.CreatedUser;
+import com.FaceCNN.faceRec.dto.Response.CreatedUserResponse;
 import com.FaceCNN.faceRec.model.User;
 import com.FaceCNN.faceRec.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +16,10 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public CreatedUser create(User user) {
+    public CreatedUserResponse create(User user) {
         if (!isEmailValid(user.getEmail())) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-            return CreatedUser.fromUser(userRepository.save(user));
+            return CreatedUserResponse.fromUser(userRepository.save(user));
         }
         return null;
 

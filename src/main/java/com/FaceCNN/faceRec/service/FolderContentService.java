@@ -48,9 +48,6 @@ public class FolderContentService {
             Folder folder = folderContent.getFolder();
             int folderAmountOfFiles = folder.getFolderContents().size();
 
-            // por padrão o s3 deleta a pasta do bucket se na hora da exclusão ele checar que só existe 1 arquivo na pasta.
-            // Existem work arounds que inserem um arquivo temporário na pasta antes da exclusão, mas nesse caso achei melhor
-            // somente deletar a pasta junto
 
             if (folderAmountOfFiles <= 1) {
                 folderRepository.deleteById(folder.getId());

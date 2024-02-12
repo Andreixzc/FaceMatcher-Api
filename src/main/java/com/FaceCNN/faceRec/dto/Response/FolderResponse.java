@@ -20,7 +20,6 @@ public record FolderResponse(String name, String id, String userId, String folde
 
     }
 
-
     private static String sanitize(String property){
         return property.replaceAll("/", "").replaceAll(" ", "").trim();
 

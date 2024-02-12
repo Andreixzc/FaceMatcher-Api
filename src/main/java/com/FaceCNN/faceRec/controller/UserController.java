@@ -4,7 +4,7 @@ import java.net.URI;
 
 import com.FaceCNN.faceRec.configuration.security.TokenResponse;
 import com.FaceCNN.faceRec.configuration.security.TokenService;
-import com.FaceCNN.faceRec.dto.Response.CreatedUser;
+import com.FaceCNN.faceRec.dto.Response.CreatedUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,7 +31,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody @Valid User user) {
-        CreatedUser createdUser = userService.create(user);
+        CreatedUserResponse createdUser = userService.create(user);
         if (createdUser != null) {
             return ResponseEntity.created(URI.create("/users/" + createdUser.id())).body(createdUser);
         }
