@@ -69,8 +69,8 @@ public class FolderService extends FolderUtils {
         folder.setFolderPklPath(folder.getFolderPath() + "pkl");
         user.addFolder(folder);
 
-        s3Service.initializeS3Folder(folder.getFolderPath() + "/");
-        s3Service.initializeS3Folder(folder.getFolderPklPath() + "/");
+//        s3Service.initializeS3Folder(folder.getFolderPath() + "/");
+//        s3Service.initializeS3Folder(folder.getFolderPklPath() + "/");
 
         userRepository.save(user);
 
