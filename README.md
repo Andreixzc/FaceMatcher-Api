@@ -13,6 +13,7 @@ Application that matches images in which a particular face appears.
 - [X] Amazon AWS
   - [X] Amazon S3
   - [X] Amazon Lambda functions
+  - [X] RDS
 - [X] Python
 - [X] Java
   - [X] Spring boot
