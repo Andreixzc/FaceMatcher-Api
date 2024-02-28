@@ -1,1 +1,30 @@
-# Application developed to help photographers make their photographs available to their customers, using a convolutional neural network (CNN) to identify a certain costumer on a set of pictures.
+<h1 align="center">
+  API - Face Matcher
+</h1>
+
+
+## 💻 Project
+Application that matches images in which a particular face appears.
+
+
+## ✨ Technologies
+
+- [X] Docker
+- [X] Amazon AWS
+  - [X] Amazon S3
+  - [X] Amazon Lambda functions
+- [X] Python
+- [X] Java
+  - [X] Spring boot
+  - [X] Spring Security
+    - [X] Bcrypt
+- [X] Postgres
+
+
+
+
+
+## 🌐 API Documentation:
+//TO DO 
+
+
