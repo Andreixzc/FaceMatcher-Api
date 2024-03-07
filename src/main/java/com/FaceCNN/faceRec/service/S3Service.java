@@ -8,7 +8,10 @@ import com.FaceCNN.faceRec.model.User;
 import com.FaceCNN.faceRec.repository.FolderContentRepository;
 import com.FaceCNN.faceRec.repository.UserRepository;
 import com.FaceCNN.faceRec.util.FolderUtils;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,16 +22,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +50,6 @@ public class S3Service extends FolderUtils {
     private final FolderContentService folderContentService;
     private final HttpService httpService;
     private final ObjectMapper objectMapper;
-
 
     public FolderResponse uploadFiles(List<MultipartFile> multipartFiles, UUID userId, String folderName) {
         try {
@@ -106,7 +109,8 @@ public class S3Service extends FolderUtils {
 
         ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
 
-        // O resultado do listing pode ser truncado, então é necessário iterar sobre os resultados
+        // O resultado do listing pode ser truncado, então é necessário iterar sobre os
+        // resultados
         while (true) {
             for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
                 s3Client.deleteObject(bucketName, objectSummary.getKey());
@@ -130,28 +134,33 @@ public class S3Service extends FolderUtils {
 
         try {
 
-            log.info("starting the process of finding matches between the reference image and the user's bucket images");
+            log.info(
+                    "starting the process of finding matches between the reference image and the user's bucket images");
 
-            //-------------Upload da imagem de referência pro bucket---------------
+            // -------------Upload da imagem de referência pro bucket---------------
             String key = "tmp/" + multipartFile.getOriginalFilename();
             sendMultipartFileToS3(multipartFile, key);
             ///////////////////////////////////////////////////////////////////////////////////////
 
-            //---------Invocando a função lambda que retorna o nome dos arquivos em PKL que houveram matches--------
+            // ---------Invocando a função lambda que retorna o nome dos arquivos em PKL que
+            // houveram matches--------
             String requestBody = buildLambdaRequestBody(key, pklFolderToSearch);
             ResponseEntity<String> response = httpService.post(LAMBDA_FUNCTION_URL, requestBody);
             ///////////////////////////////////////////////////////////////////////////////////////
 
-            //----------- ----------------Tratando resultado da requisição:--------------------------------
-            // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl, imagem2.pkl,imagem3.pkl...]
+            // ----------- ----------------Tratando resultado da
+            // requisição:--------------------------------
+            // Convertendo a resposta em Json, pra lista: que ficaria assim: [imagem1.pkl,
+            // imagem2.pkl,imagem3.pkl...]
             List<String> resultList = parseMatchesJson(response.getBody());
 
             /////////////////////////////////////////////////////////////////
-            //Construindo o caminho completo do arquivo Pkl:
-            //[UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
+            // Construindo o caminho completo do arquivo Pkl:
+            // [UUID/Evento1/imagem1.pkl,UUID/Evento1/imagem2.pkl,UUID/Evento1/imagem3.pkl]
             List<String> matchesKey = buildMatchesPath(resultList, pklFolderToSearch);
 
-            //Extraindo path original do banco de dados das imagens, sem ser do arquivo em PKL.
+            // Extraindo path original do banco de dados das imagens, sem ser do arquivo em
+            // PKL.
             List<String> originalMatchPath = getOriginalFileNames(matchesKey);
 
             return folderContentService.findFolderContentsByFilePaths(originalMatchPath);
@@ -162,8 +171,6 @@ public class S3Service extends FolderUtils {
         }
 
     }
-
-
 
     private String buildLambdaRequestBody(String refPath, String pickleFolderKey) {
         try {
@@ -214,5 +221,75 @@ public class S3Service extends FolderUtils {
 
         s3Client.putObject(bucketName, key, inputStream, new ObjectMetadata());
     }
+
+    
+
+    public List<File> downloadFoward(String[] objectKeys) {
+        String bucketName = this.bucketName;
+        List<File> downloadedFiles = new ArrayList<>();
+
+        for (String objectKey : objectKeys) {
+            final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.SA_EAST_1).build();
+            try {
+                S3Object o = s3.getObject(bucketName, objectKey);
+                S3ObjectInputStream s3is = o.getObjectContent();
+
+                File downloadedFile = new File(objectKey);
+                FileOutputStream fos = new FileOutputStream(downloadedFile);
+                byte[] readBuf = new byte[1024];
+                int readLen;
+                while ((readLen = s3is.read(readBuf)) > 0) {
+                    fos.write(readBuf, 0, readLen);
+                }
+                s3is.close();
+                fos.close();
+
+                downloadedFiles.add(downloadedFile);
+            } catch (AmazonServiceException e) {
+                System.err.println(e.getErrorMessage());
+                System.exit(1);
+            } catch (FileNotFoundException e) {
+                System.err.println(e.getMessage());
+                System.exit(1);
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+                System.exit(1);
+            }
+        }
+        for (int i = 0; i < downloadedFiles.size(); i++) {
+            System.out.println("Printing downloaded files" + downloadedFiles.get(i).getName());
+        }
+        return downloadedFiles;
+    }
+
+
+    public List<byte[]> downloadFowardByte(String[] objectKeys) {
+        List<byte[]> downloadedFiles = new ArrayList<>();
+
+        AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.SA_EAST_1).build();
+
+        try {
+            for (String objectKey : objectKeys) {
+                S3Object object = s3.getObject(bucketName, objectKey);
+                S3ObjectInputStream s3is = object.getObjectContent();
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                byte[] readBuf = new byte[1024];
+                int readLen;
+                while ((readLen = s3is.read(readBuf)) > 0) {
+                    outputStream.write(readBuf, 0, readLen);
+                }
+                outputStream.close();
+
+                downloadedFiles.add(outputStream.toByteArray());
+            }
+        } catch (AmazonServiceException | IOException e) {
+            e.printStackTrace();
+            // Handle exception
+        }
+
+        return downloadedFiles;
+    }
+
 
 }

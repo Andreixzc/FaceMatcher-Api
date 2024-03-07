@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,6 +43,10 @@ public class FolderContentController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-}
+    @PostMapping("/downloadAllMatches")
+    public List<byte[]> downloadAllMatches(@RequestBody String[] objKeys) throws Exception {
+        return s3Service.downloadFowardByte(objKeys);
+    }
+}   
 
 

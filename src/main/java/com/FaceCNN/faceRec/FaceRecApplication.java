@@ -9,5 +9,6 @@ public class FaceRecApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(FaceRecApplication.class, args);
 	}
-	
+		
 }
+	

@@ -30,6 +30,7 @@ public class FolderContentService {
                 .toList();
     }
 
+    @SuppressWarnings("null")
     public FolderContent findFolderContentById(UUID folderContentId) {
         return folderContentRepository.findById(folderContentId)
                 .orElseThrow(() -> new RuntimeException("Folder Content not found"));
