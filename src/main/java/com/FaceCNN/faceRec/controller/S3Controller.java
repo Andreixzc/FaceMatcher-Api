@@ -4,6 +4,8 @@ import com.FaceCNN.faceRec.dto.Response.FolderContentResponse;
 import com.FaceCNN.faceRec.dto.Response.FolderResponse;
 import com.FaceCNN.faceRec.service.S3Service;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,22 +22,27 @@ public class S3Controller {
 
     private final S3Service s3Service;
 
+    @GetMapping("/hello")
+    public String hello() {
+        return "Hello";
+    }
+
     @PostMapping("/upload")
     public FolderResponse upload(@RequestParam(value = "file") List<MultipartFile> files,
-                                 @RequestParam(value = "folderName") String folderName) {
+            @RequestParam(value = "folderName") String folderName) {
         var userId = getLoggedUser().getId();
         return s3Service.uploadFiles(files, userId, folderName);
     }
 
     @PostMapping("/ref")
     public List<FolderContentResponse> uploadRef(@RequestParam(value = "file") MultipartFile file,
-                                                 @RequestParam(value = "folderPath") String pklFolderName) {
+            @RequestParam(value = "folderPath") String pklFolderName) {
         var userId = getLoggedUser().getId();
         String parsedId = pklFolderName.toString().split("/")[0];
         System.out.println(parsedId);
         if (userId.toString().equals(parsedId)) {
             return s3Service.checkMatch(file, pklFolderName);
-            
+
         }
         throw new RuntimeException("Not folder owner");
     }
